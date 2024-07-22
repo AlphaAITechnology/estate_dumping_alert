@@ -13,7 +13,7 @@ import gzip
 
 
 
-def get_diff(img_list, human_path_mask = None, threshold=10):
+def get_diff(img_list, human_path_mask = None, threshold=12):
         if not (len(img_list) > 1):
                 return None
         
@@ -24,15 +24,33 @@ def get_diff(img_list, human_path_mask = None, threshold=10):
         img_bh = cv.GaussianBlur(img_bh, (15,15), cv.BORDER_DEFAULT) * human_path_mask
         img_ah = cv.GaussianBlur(img_ah, (15,15), cv.BORDER_DEFAULT) * human_path_mask
 
-        img_bh = cv.cvtColor(img_bh, cv.COLOR_BGR2Lab).astype(np.float32)[:,:,1:] - 127
-        img_ah = cv.cvtColor(img_ah, cv.COLOR_BGR2Lab).astype(np.float32)[:,:,1:] - 127
+        img_bh = cv.cvtColor(img_bh, cv.COLOR_BGR2Lab).astype(np.float32)
+        img_ah = cv.cvtColor(img_ah, cv.COLOR_BGR2Lab).astype(np.float32)
 
-        m_ = np.where(np.sqrt(np.add.reduce(np.square(img_ah - img_bh), axis=2)) >= threshold, 1, 0).astype(np.uint8)
+        # Bring np.uint8 to proper np.float32 format for CIELab
+        img_bh[:,:,1:] -= np.float32(127)
+        img_ah[:,:,1:] -= np.float32(127)
+        img_bh[:,:,0] *= np.float32(100/255)
+        img_ah[:,:,0] *= np.float32(100/255)
+
+        # Disconsider the L in CIELab
+        img_bh = img_bh[:,:,1:]
+        img_ah = img_ah[:,:,1:]
+
+        two_stack_mask = np.minimum(
+                np.minimum(
+                        np.abs(img_ah - img_bh),
+                        np.abs(img_ah - img_bh + 256)
+                ),
+                np.abs(img_ah - img_bh - 256)
+        )
+
+        a_thresh, b_thresh = 5, 5 # threshold for simple difference
+        m_ = (np.where(two_stack_mask[:,:,0] > a_thresh, 1, 0) * np.where(two_stack_mask[:,:,0] > b_thresh, 1, 0)).astype(np.uint8)
         m_ = cv.GaussianBlur(np.stack((m_, m_, m_), axis=2)*255, (15,15), 0)
         m_ = np.where(m_[:,:,0]>0, 1, 0).astype(np.uint8)
 
         return np.stack((m_, m_, m_), axis=2)
-
 
 def detect(model, img, conf=0.4, classes=[0, 25]):
     # Run inference
@@ -112,52 +130,52 @@ def Email():
         if (not for_sending.empty()):
             file_path, human_file_path, date_ = for_sending.get()
 
-            with open(file_path, "rb") as files_:
-                # storing file
-                response_img = req.post(
-                    f"{base_url}/{upload_point}",
-                    files={'file': (file_path, files_, 'image/webp')},
-                    headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
-                )
-            with open(human_file_path, "rb") as files_:
-                # storing file
-                response_highlight = req.post(
-                    f"{base_url}/{upload_point}",
-                    files={'file': (human_file_path, files_, 'image/webp')},
-                    headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
-                )
-            # deleting file
-            os.remove(file_path)
-            os.remove(human_file_path)
+        #     with open(file_path, "rb") as files_:
+        #         # storing file
+        #         response_img = req.post(
+        #             f"{base_url}/{upload_point}",
+        #             files={'file': (file_path, files_, 'image/webp')},
+        #             headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
+        #         )
+        #     with open(human_file_path, "rb") as files_:
+        #         # storing file
+        #         response_highlight = req.post(
+        #             f"{base_url}/{upload_point}",
+        #             files={'file': (human_file_path, files_, 'image/webp')},
+        #             headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
+        #         )
+        #     # deleting file
+        #     os.remove(file_path)
+        #     os.remove(human_file_path)
 
-            if  (response_img.status_code == 201) and (response_highlight.status_code == 201):
-                response_1 = json.loads(response_img.text)
-                response_2 = json.loads(response_highlight.text)
+        #     if  (response_img.status_code == 201) and (response_highlight.status_code == 201):
+        #         response_1 = json.loads(response_img.text)
+        #         response_2 = json.loads(response_highlight.text)
 
-                img_url = response_1["fileUrl"] if "fileUrl" in response_1 else None
-                highlight_url = response_2["fileUrl"] if "fileUrl" in response_2 else None
+        #         img_url = response_1["fileUrl"] if "fileUrl" in response_1 else None
+        #         highlight_url = response_2["fileUrl"] if "fileUrl" in response_2 else None
 
-                if img_url:
-                    response = req.post(
-                        f"{base_url}/{email_point}",
-                        headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
-                        data={
-                            "dataUrl":img_url,
-                            "highlightUrl":highlight_url,
-                            "reportDateStart": date_,
-                            "reportDateEnd": date_,
-                            "totalDetection":1,
-                        }
-                    )
+        #         if img_url:
+        #             response = req.post(
+        #                 f"{base_url}/{email_point}",
+        #                 headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
+        #                 data={
+        #                     "dataUrl":img_url,
+        #                     "highlightUrl":highlight_url,
+        #                     "reportDateStart": date_,
+        #                     "reportDateEnd": date_,
+        #                     "totalDetection":1,
+        #                 }
+        #             )
 
-                    print(
-                        "email response:\t",
-                        json.loads(
-                            response.text
-                        )
-                    )
-        # else:
-        #     time.sleep(1)
+        #             print(
+        #                 "email response:\t",
+        #                 json.loads(
+        #                     response.text
+        #                 )
+        #             )
+        # # else:
+        # #     time.sleep(1)
     elegant_shutdown.put(True)
 
 def SaveToDisk():
@@ -255,8 +273,8 @@ def Analyse():
                                                 img_list_bh[-2], # before anything
                                                 himg, # last human image
                                                 img_list_bh[-1], # immediatly after human left,
-                                                # mask*255,
-                                                # img_list_bh[-1] * mask
+                                                mask*255,
+                                                img_list_bh[-1] * mask
                                             ))
                                             
                                             , f"tmp/human_{counter:09}.jpeg")),
@@ -304,8 +322,8 @@ def Analyse():
 
 def Receive():
     
-    cap = cv.VideoCapture("rtsp://admin:12345678a@180.188.143.227:580 ! decodebin ! videoconvert ! appsink max-buffers=1 drop=trueqqq")
-    # cap = cv.VideoCapture("sample_video.mkv")
+    # cap = cv.VideoCapture("rtsp://admin:12345678a@180.188.143.227:580 ! decodebin ! videoconvert ! appsink max-buffers=1 drop=trueqqq")
+    cap = cv.VideoCapture("sample_video.mkv")
     
     ret, frame = cap.read()
     q.put((frame, 0))
