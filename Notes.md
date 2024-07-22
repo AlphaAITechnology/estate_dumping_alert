@@ -1,1 +1,1 @@
-[] Better Filters
+[x] Better Filters
