@@ -304,7 +304,8 @@ def Analyse():
 
 def Receive():
     
-    cap = cv.VideoCapture("rtsp://admin:12345678a@180.188.143.227:580 ! decodebin ! videoconvert ! appsink max-buffers=1 drop=trueqqq")
+    # cap = cv.VideoCapture("rtsp://admin:12345678a@180.188.143.227:580 ! decodebin ! videoconvert ! appsink max-buffers=1 drop=trueqqq")
+    cap = cv.VideoCapture("rtsp://admin:12345678a@180.188.143.227:580")
     
     ret, frame = cap.read()
     q.put((frame, 0))
