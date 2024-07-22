@@ -34,7 +34,7 @@ def get_diff(img_list, human_path_mask = None, threshold=10):
         return np.stack((m_, m_, m_), axis=2)
 
 
-def detect(model, img, conf=0.4, classes=[0, 25]):
+def detect(model, img, conf=0.4, classes=[0, 7, 25]):
     # Run inference
     results = model(img)
     res = results.pandas().xyxy[0]
@@ -46,8 +46,8 @@ def detect(model, img, conf=0.4, classes=[0, 25]):
     return res[res["class"].isin(classes)] #res[["xmin", "ymin", "xmax", "ymax"]]
 
 
-def mask_away_umbrella(umbrella_df, mask):
-    x1,y1,x2,y2 = [int(i) for i in umbrella_df.to_numpy().tolist()[0]]
+def mask_away_obstacles(obstacle_df, mask):
+    x1,y1,x2,y2 = [int(i) for i in obstacle_df.to_numpy().tolist()[0]]
     mask[y1:y2, x1:x2, ...] = 0
     return mask
 
@@ -192,7 +192,10 @@ def Analyse():
     max_queue_threshold = 15
     img_list_bh = []
     img_ah_coor = []
+    
     seen_flg = False
+    frames_since_last_spotted = 0
+    frames_since_last_spotted_threshold = 5
 
 
     last_human_image = None # stores image holding photo of humans
@@ -207,12 +210,13 @@ def Analyse():
             detections = detect(model, img * hardcoded_mask, conf=0.2, classes=[0, 25])
             
             humans = detections[detections["class"] == 0] #looking for human classes=[0]
-            umbrella = detections[detections["class"] == 25] #looking for human classes=[0]
+            obstacles = detections[detections["class"].isin([7,25])] #looking for trucks and umbrellas
+
             # if humans weren't seen before we want higher confidence to trigger, lower confidence to sustain
             humans = humans[humans["confidence"] >= (minimum_human_confidence_trigger  if not seen_flg else minimum_human_confidence_sustain)]
             # reduce to useful points
             humans = humans[["xmin", "ymin", "xmax", "ymax"]]
-            umbrella = umbrella[["xmin", "ymin", "xmax", "ymax"]]
+            obstacles = obstacles[["xmin", "ymin", "xmax", "ymax"]]
 
             
             if (humans.empty):
@@ -224,50 +228,55 @@ def Analyse():
 
 
                 else:
-                    seen_flg = False
-
-                    human_path_mask = np.zeros_like(img)
-                    human_path_mask = get_human_path_mask(human_path_mask, img_ah_coor)
                     
-                    # black out umbrella
-                    if not umbrella.empty:
-                        human_path_mask = mask_away_umbrella(umbrella, human_path_mask)
+                    frames_since_last_spotted += 1
+                    if (frames_since_last_spotted > frames_since_last_spotted_threshold):
+                        seen_flg = False
+                        frames_since_last_spotted = 0
+                        
 
-                    img_list_bh.append(img)
-                    mask = get_diff(img_list_bh, human_path_mask)
+                        human_path_mask = np.zeros_like(img)
+                        human_path_mask = get_human_path_mask(human_path_mask, img_ah_coor)
+                        
+                        # black out obstacles
+                        if not obstacles.empty:
+                            human_path_mask = mask_away_obstacles(obstacles, human_path_mask)
+
+                        img_list_bh.append(img)
+                        mask = get_diff(img_list_bh, human_path_mask)
 
 
-                    if (mask is not None):
-                        himg, _ = last_human_image
+                        if (mask is not None):
+                            himg, _ = last_human_image
 
-                        xyxy = get_changes_bbox(mask)
-                        if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
-                            (x1,y1), (x2,y2) = xyxy
-                            cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
+                            xyxy = get_changes_bbox(mask)
+                            if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
+                                (x1,y1), (x2,y2) = xyxy
+                                cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
 
 
-                            for_saving.put(
-                                (
-                                    [
-                                        ((img_list_bh[-1], f"tmp/img_{counter:09}.jpeg"), (
-                                            
-                                            np.vstack((
-                                                img_list_bh[-2], # before anything
-                                                himg, # last human image
-                                                img_list_bh[-1], # immediatly after human left,
-                                                # mask*255,
-                                                # img_list_bh[-1] * mask
-                                            ))
-                                            
-                                            , f"tmp/human_{counter:09}.jpeg")),
-                                    ], f"{datetime.datetime.now().isoformat()}"
+                                for_saving.put(
+                                    (
+                                        [
+                                            ((img_list_bh[-1], f"tmp/img_{counter:09}.jpeg"), (
+                                                
+                                                np.vstack((
+                                                    img_list_bh[-2], # before anything
+                                                    himg, # last human image
+                                                    img_list_bh[-1], # immediatly after human left,
+                                                    # mask*255,
+                                                    # img_list_bh[-1] * mask
+                                                ))
+                                                
+                                                , f"tmp/human_{counter:09}.jpeg")),
+                                        ], f"{datetime.datetime.now().isoformat()}"
+                                    )
                                 )
-                            )
-                            # print(((x1,y1), (x2,y2)))
+                                # print(((x1,y1), (x2,y2)))
                     
-                    img_list_bh.clear()
-                    img_ah_coor.clear()
-                    last_human_image = None
+                        img_list_bh.clear()
+                        img_ah_coor.clear()
+                        last_human_image = None
                     
             else:
                 human_np = humans.to_numpy()
@@ -293,6 +302,7 @@ def Analyse():
 
 
                 seen_flg = True
+                frames_since_last_spotted = 0
 
             q.put((img, counter))
             time.sleep(0.2)
@@ -304,7 +314,7 @@ def Analyse():
 
 def Receive():
     
-    cap = cv.VideoCapture("rtsp://admin:12345678a@180.188.143.227:580 ! decodebin ! videoconvert ! appsink max-buffers=1 drop=trueqqq")
+    cap = cv.VideoCapture("rtsp://admin:12345678a@180.188.143.227:580")
     
     ret, frame = cap.read()
     q.put((frame, 0))
