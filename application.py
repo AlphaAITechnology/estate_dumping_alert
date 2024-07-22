@@ -192,7 +192,10 @@ def Analyse():
     max_queue_threshold = 15
     img_list_bh = []
     img_ah_coor = []
+    
     seen_flg = False
+    frames_since_last_spotted = 0
+    frames_since_last_spotted_threshold = 3
 
 
     last_human_image = None # stores image holding photo of humans
@@ -225,50 +228,55 @@ def Analyse():
 
 
                 else:
-                    seen_flg = False
-
-                    human_path_mask = np.zeros_like(img)
-                    human_path_mask = get_human_path_mask(human_path_mask, img_ah_coor)
                     
-                    # black out obstacles
-                    if not obstacles.empty:
-                        human_path_mask = mask_away_obstacles(obstacles, human_path_mask)
+                    frames_since_last_spotted += 1
+                    if (frames_since_last_spotted > frames_since_last_spotted_threshold):
+                        seen_flg = False
+                        frames_since_last_spotted = 0
+                        
 
-                    img_list_bh.append(img)
-                    mask = get_diff(img_list_bh, human_path_mask)
+                        human_path_mask = np.zeros_like(img)
+                        human_path_mask = get_human_path_mask(human_path_mask, img_ah_coor)
+                        
+                        # black out obstacles
+                        if not obstacles.empty:
+                            human_path_mask = mask_away_obstacles(obstacles, human_path_mask)
+
+                        img_list_bh.append(img)
+                        mask = get_diff(img_list_bh, human_path_mask)
 
 
-                    if (mask is not None):
-                        himg, _ = last_human_image
+                        if (mask is not None):
+                            himg, _ = last_human_image
 
-                        xyxy = get_changes_bbox(mask)
-                        if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
-                            (x1,y1), (x2,y2) = xyxy
-                            cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
+                            xyxy = get_changes_bbox(mask)
+                            if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
+                                (x1,y1), (x2,y2) = xyxy
+                                cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
 
 
-                            for_saving.put(
-                                (
-                                    [
-                                        ((img_list_bh[-1], f"tmp/img_{counter:09}.jpeg"), (
-                                            
-                                            np.vstack((
-                                                img_list_bh[-2], # before anything
-                                                himg, # last human image
-                                                img_list_bh[-1], # immediatly after human left,
-                                                # mask*255,
-                                                # img_list_bh[-1] * mask
-                                            ))
-                                            
-                                            , f"tmp/human_{counter:09}.jpeg")),
-                                    ], f"{datetime.datetime.now().isoformat()}"
+                                for_saving.put(
+                                    (
+                                        [
+                                            ((img_list_bh[-1], f"tmp/img_{counter:09}.jpeg"), (
+                                                
+                                                np.vstack((
+                                                    img_list_bh[-2], # before anything
+                                                    himg, # last human image
+                                                    img_list_bh[-1], # immediatly after human left,
+                                                    # mask*255,
+                                                    # img_list_bh[-1] * mask
+                                                ))
+                                                
+                                                , f"tmp/human_{counter:09}.jpeg")),
+                                        ], f"{datetime.datetime.now().isoformat()}"
+                                    )
                                 )
-                            )
-                            # print(((x1,y1), (x2,y2)))
+                                # print(((x1,y1), (x2,y2)))
                     
-                    img_list_bh.clear()
-                    img_ah_coor.clear()
-                    last_human_image = None
+                        img_list_bh.clear()
+                        img_ah_coor.clear()
+                        last_human_image = None
                     
             else:
                 human_np = humans.to_numpy()
@@ -294,6 +302,7 @@ def Analyse():
 
 
                 seen_flg = True
+                frames_since_last_spotted = 0
 
             q.put((img, counter))
             time.sleep(0.2)
