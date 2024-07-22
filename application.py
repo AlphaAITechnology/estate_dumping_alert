@@ -305,7 +305,6 @@ def Analyse():
 def Receive():
     
     cap = cv.VideoCapture("rtsp://admin:12345678a@180.188.143.227:580 ! decodebin ! videoconvert ! appsink max-buffers=1 drop=trueqqq")
-    # cap = cv.VideoCapture("sample_video.mkv")
     
     ret, frame = cap.read()
     q.put((frame, 0))
@@ -323,6 +322,10 @@ def Receive():
         else:
             cap.release()
             break
+
+        if cap.get(cv.CAP_PROP_BUFFERSIZE) > 1:
+            cap.set(cv.CAP_PROP_BUFFERSIZE, 1)
+
     elegant_shutdown.put(True)
 
 
