@@ -346,7 +346,7 @@ def Receive():
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
-            if q.empty() != True:
+            if not q.empty():
                 v_ = q.get()
                 del v_
                 q.put((frame, count))
