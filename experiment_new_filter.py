@@ -49,15 +49,13 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
 
 
 
-
-
-
-
 def mask_edge(img_a, img_b, threshold=70):
-    img_a_, img_b_ = [cv.GaussianBlur(img_, (5,5), cv.BORDER_DEFAULT) for img_ in [img_a, img_b]]
-
-    img_a_e = cv.Canny(cv.cvtColor(img_a_, cv.COLOR_BGR2GRAY), threshold, threshold*2)
-    img_b_e = cv.Canny(cv.cvtColor(img_b_, cv.COLOR_BGR2GRAY), threshold, threshold*2)
+    img_a_e, img_b_e = [cv.Canny(cv.cvtColor(img, cv.COLOR_BGR2GRAY), threshold, threshold*2) for img in [
+          cv.GaussianBlur(img_, (5,5), cv.BORDER_DEFAULT) for img_ in [img_a, img_b]
+          ]]
+    
+    img_a = cv.resize(img_a_e, None, fx=0.2, fy=0.2, interpolation=cv.INTER_NEAREST)
+    img_b = cv.resize(img_b_e, None, fx=0.2, fy=0.2, interpolation=cv.INTER_NEAREST)
 
     m_ = np.where(img_a_e != img_b_e, 1, 0).astype(np.uint8)
     mask_edge = np.stack((m_, m_, m_), axis=2)
@@ -79,15 +77,7 @@ imgs = [
     ]
 ]
 
-diff = get_diff(imgs)
-edge_mask = mask_edge(imgs[0]*diff, imgs[2]*diff) * 255
-edge_mask_ = cv.morphologyEx(edge_mask, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, (5,5)), iterations=1)
-edge_mask_ = cv.morphologyEx(edge_mask_, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT, (5,5)), iterations=3)
 
-cv.namedWindow("mm", cv.WINDOW_NORMAL)
-cv.imshow("mm", np.hstack((edge_mask, edge_mask_)))
-cv.waitKey(0)
-cv.destroyAllWindows()
 
 
 # cv.namedWindow("Live", cv.WINDOW_NORMAL)
