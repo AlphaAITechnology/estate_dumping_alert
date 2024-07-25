@@ -195,7 +195,7 @@ def Analyse():
     
     seen_flg = False
     frames_since_last_spotted = 0
-    frames_since_last_spotted_threshold = 5
+    frames_since_last_spotted_threshold = 10
 
 
     last_human_image = None # stores image holding photo of humans
@@ -213,7 +213,7 @@ def Analyse():
             obstacles = detections[detections["class"].isin([7,25])] #looking for trucks and umbrellas
 
             # if humans weren't seen before we want higher confidence to trigger, lower confidence to sustain
-            humans = humans[humans["confidence"] >= (minimum_human_confidence_trigger  if not seen_flg else minimum_human_confidence_sustain)]
+            # humans = humans[humans["confidence"] >= (minimum_human_confidence_trigger  if not seen_flg else minimum_human_confidence_sustain)]
             # reduce to useful points
             humans = humans[["xmin", "ymin", "xmax", "ymax"]]
             obstacles = obstacles[["xmin", "ymin", "xmax", "ymax"]]
