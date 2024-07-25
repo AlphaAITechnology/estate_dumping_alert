@@ -54,13 +54,13 @@ def mask_edge(img_a, img_b, threshold=70):
           cv.GaussianBlur(img_, (5,5), cv.BORDER_DEFAULT) for img_ in [img_a, img_b]
           ]]
     
-    img_a = cv.resize(img_a_e, None, fx=0.2, fy=0.2, interpolation=cv.INTER_NEAREST)
-    img_b = cv.resize(img_b_e, None, fx=0.2, fy=0.2, interpolation=cv.INTER_NEAREST)
+    img_a = cv.resize(img_a_e, None, fx=0.5, fy=0.5, interpolation=cv.INTER_NEAREST)
+    img_b = cv.resize(img_b_e, None, fx=0.5, fy=0.5, interpolation=cv.INTER_NEAREST)
     
     
-    m_ = cv.resize(np.where(img_a != img_b, 1, 0).astype(np.uint8), None, fx=5, fy=5, interpolation=cv.INTER_NEAREST)
-    m_ = cv.morphologyEx(m_, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, (5,5)), iterations=5)
-    m_ = cv.morphologyEx(m_, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT, (5,5)), iterations=5)
+    m_ = cv.resize(np.where(img_a != img_b, 1, 0).astype(np.uint8), None, fx=2, fy=2, interpolation=cv.INTER_NEAREST)
+    # m_ = cv.morphologyEx(m_, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, (5,5)), iterations=5)
+    # m_ = cv.morphologyEx(m_, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT, (5,5)), iterations=5)
 
     mask = np.stack((m_, m_, m_), axis=2)
 
@@ -82,13 +82,16 @@ imgs = [
 ]
 
 color = get_diff(imgs)
-mask = (mask_edge(imgs[0], imgs[-1]) * color) * 255
+mask = (mask_edge(imgs[0], imgs[-1]))
+# mask = (mask_edge(imgs[0], imgs[-1]) * color) * 255
 
 
-# mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, (5,5)), iterations=1)
-# mask = cv.morphologyEx(mask, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT, (5,5)), iterations=5)
+
+
+mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_CROSS, (5,5)), iterations=5)
+mask = cv.morphologyEx(mask, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT, (5,5)), iterations=5)
 
 cv.namedWindow("Live", cv.WINDOW_NORMAL)
-cv.imshow("Live", mask)
+cv.imshow("Live", (color * mask)*imgs[-1])
 cv.waitKey(0)
 cv.destroyAllWindows()
