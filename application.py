@@ -184,7 +184,7 @@ def SaveToDisk():
 
 def Analyse():
     # hard coded a mask to remove streets
-    with gzip.open("street_mask.csv.gz", 'rt') as file:
+    with gzip.open("street_container_mask.csv.gz", 'rt') as file:
         hc_mask = pd.read_csv(file, header=None).to_numpy().astype(np.uint8)
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
     
