@@ -236,7 +236,7 @@ def Analyse():
                         
 
                         human_path_mask = np.zeros_like(img)
-                        human_path_mask = get_human_path_mask(human_path_mask, img_ah_coor)
+                        human_path_mask = get_human_path_mask(human_path_mask, img_ah_coor) * hardcoded_mask
                         
                         # black out obstacles
                         if not obstacles.empty:
