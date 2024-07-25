@@ -218,7 +218,7 @@ def Analyse():
     
     seen_flg = False
     frames_since_last_spotted = 0
-    frames_since_last_spotted_threshold = 10
+    frames_since_last_spotted_threshold = 25
     minimum_human_confidence_trigger = 0.4
 
 
