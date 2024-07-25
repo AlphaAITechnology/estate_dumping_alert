@@ -29,7 +29,7 @@ def get_diff(img_list, human_path_mask = None, threshold=10):
 
 
 def mask_diff(img_a, img_b, threshold=70):
-    img_a_, img_b_ = [cv.GaussianBlur(img_, (3,3), cv.BORDER_DEFAULT) for img_ in [img_a, img_b]]
+    img_a_, img_b_ = [cv.GaussianBlur(img_, (5,5), cv.BORDER_DEFAULT) for img_ in [img_a, img_b]]
 
     img_a_e = cv.Canny(cv.cvtColor(img_a_, cv.COLOR_BGR2GRAY), threshold, threshold*2)
     img_b_e = cv.Canny(cv.cvtColor(img_b_, cv.COLOR_BGR2GRAY), threshold, threshold*2)
