@@ -13,7 +13,7 @@ import gzip
 
 
 
-def get_diff(img_list, human_path_mask = None, threshold=12):
+def get_diff(img_list, human_path_mask = None, threshold=None):
         if not (len(img_list) > 1):
                 return None
         
@@ -27,15 +27,14 @@ def get_diff(img_list, human_path_mask = None, threshold=12):
         img_bh = cv.cvtColor(img_bh, cv.COLOR_BGR2Lab).astype(np.float32)
         img_ah = cv.cvtColor(img_ah, cv.COLOR_BGR2Lab).astype(np.float32)
 
-        # Bring np.uint8 to proper np.float32 format for CIELab
-        img_bh[:,:,1:] -= np.float32(127)
-        img_ah[:,:,1:] -= np.float32(127)
-        img_bh[:,:,0] *= np.float32(100/255)
-        img_ah[:,:,0] *= np.float32(100/255)
-
         # Disconsider the L in CIELab
         img_bh = img_bh[:,:,1:]
         img_ah = img_ah[:,:,1:]
+
+        # Bring np.uint8 to proper np.float32 format for CIELab
+        img_bh[:,:,1:] -= np.float32(127)
+        img_ah[:,:,1:] -= np.float32(127)
+                
 
         two_stack_mask = np.minimum(
                 np.minimum(
@@ -45,11 +44,12 @@ def get_diff(img_list, human_path_mask = None, threshold=12):
                 np.abs(img_ah - img_bh - 256)
         )
 
-        a_thresh, b_thresh = 5, 5 # threshold for simple difference
-        m_ = (np.where(two_stack_mask[:,:,0] > a_thresh, 1, 0) * np.where(two_stack_mask[:,:,0] > b_thresh, 1, 0)).astype(np.uint8)
-        m_ = cv.GaussianBlur(np.stack((m_, m_, m_), axis=2)*255, (15,15), 0)
-        m_ = np.where(m_[:,:,0]>0, 1, 0).astype(np.uint8)
+        threshold = threshold if threshold is not None else np.square(2.3)
+        m_ = np.where(
+            (np.where(two_stack_mask[:,:,0] > threshold, 1, 0) + np.where(two_stack_mask[:,:,1] > threshold, 1, 0)) > 0, 1, 0
+        ).astype(np.uint8)
 
+        
         return np.stack((m_, m_, m_), axis=2)
 
 def detect(model, img, conf=0.4, classes=[0, 25]):
