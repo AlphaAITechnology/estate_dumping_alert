@@ -336,8 +336,7 @@ def Analyse():
 
 def Receive():
     
-    # cap = cv.VideoCapture("rtsp://admin:12345678a@180.188.143.227:580 ! decodebin ! videoconvert ! appsink max-buffers=1 drop=trueqqq")
-    cap = cv.VideoCapture("rtsp://admin:12345678a@180.188.143.227:580")
+    cap = cv.VideoCapture("rtsp://admin:hik12345@180.188.143.227:581", cv.CAP_FFMPEG)
     
     ret, frame = cap.read()
     q.put((frame, 0))
@@ -354,10 +353,11 @@ def Receive():
                 count %= 1000000000
         else:
             cap.release()
-            break
+            cap = cv.VideoCapture("rtsp://admin:hik12345@180.188.143.227:581", cv.CAP_FFMPEG)
 
-        if cap.get(cv.CAP_PROP_BUFFERSIZE) > 1:
-            cap.set(cv.CAP_PROP_BUFFERSIZE, 1)
+
+        # if cap.get(cv.CAP_PROP_BUFFERSIZE) > 1:
+        #     cap.set(cv.CAP_PROP_BUFFERSIZE, 1)
 
     elegant_shutdown.put(True)
 
