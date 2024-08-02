@@ -70,8 +70,15 @@ def detect(model, img, conf=0.4, classes=[0, 7, 25]):
 
 
 def mask_away_obstacles(obstacle_df, mask):
+    
     x1,y1,x2,y2 = [int(i) for i in obstacle_df.to_numpy().tolist()[0]]
-    mask[y1:y2, x1:x2, ...] = 0
+    
+    _, w, _ = mask.shape
+    if (((x1+x1)/2)/w) < 0.30: # if obtacle center is in the left thirds of the image
+        mask[y1:, x1:x2, ...] = 0 # blackout all the way to the bottom
+    else:
+        mask[y1:y2, x1:x2, ...] = 0 # normal overlapping blackout
+
     return mask
 
 def get_human_path_mask(human_path_mask, coor_list=[]):
