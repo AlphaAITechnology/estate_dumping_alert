@@ -142,6 +142,9 @@ def Email():
         if (not for_sending.empty()):
             file_path, human_file_path, date_ = for_sending.get()
 
+            if video_print_flg.empty():
+                video_print_flg.put(True)
+
         #     with open(file_path, "rb") as files_:
         #         # storing file
         #         response_img = req.post(
@@ -208,6 +211,28 @@ def SaveToDisk():
         #     time.sleep(1)
             
     elegant_shutdown.put(True)
+
+
+
+
+
+def WriteVideo():
+    while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
+        if not video_images.empty():
+            if (not video_print_flg.empty()) and (video_print_flg.get()):
+                video_imgs = video_images.get()
+
+                h, w, _ = video_images[0].shape
+                fps = 12.0
+                writer = cv.VideoWriter(f"./tmp/{datetime.datetime.now().isoformat()}.mkv", cv.VideoWriter.fourcc('M','J','P','G'), fps, (w, h))
+
+                for frame in video_imgs:
+                    writer.write(frame)
+                writer.release()
+
+            
+    elegant_shutdown.put(True)
+
 
 
 
@@ -356,6 +381,16 @@ def Receive():
                 v_ = q.get()
                 del v_
                 q.put((frame, count))
+
+                
+                video_imgs = [] if video_images.empty() else video_images.get()
+                video_imgs.append(frame.copy())
+                if len(video_imgs) > 30:
+                    video_imgs.pop(0)
+                video_images.put(video_imgs)
+
+
+
                 count += 1
                 count %= 1000000000
         else:
@@ -369,7 +404,8 @@ def Receive():
     elegant_shutdown.put(True)
 
 
-
+video_images = queue.Queue()
+video_print_flg = queue.Queue()
 
 q = queue.Queue()
 for_saving = queue.Queue()
