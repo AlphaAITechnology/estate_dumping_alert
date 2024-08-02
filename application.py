@@ -142,52 +142,52 @@ def Email():
         if (not for_sending.empty()):
             file_path, human_file_path, date_ = for_sending.get()
 
-            with open(file_path, "rb") as files_:
-                # storing file
-                response_img = req.post(
-                    f"{base_url}/{upload_point}",
-                    files={'file': (file_path, files_, 'image/webp')},
-                    headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
-                )
-            with open(human_file_path, "rb") as files_:
-                # storing file
-                response_highlight = req.post(
-                    f"{base_url}/{upload_point}",
-                    files={'file': (human_file_path, files_, 'image/webp')},
-                    headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
-                )
-            # deleting file
-            os.remove(file_path)
-            os.remove(human_file_path)
+        #     with open(file_path, "rb") as files_:
+        #         # storing file
+        #         response_img = req.post(
+        #             f"{base_url}/{upload_point}",
+        #             files={'file': (file_path, files_, 'image/webp')},
+        #             headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
+        #         )
+        #     with open(human_file_path, "rb") as files_:
+        #         # storing file
+        #         response_highlight = req.post(
+        #             f"{base_url}/{upload_point}",
+        #             files={'file': (human_file_path, files_, 'image/webp')},
+        #             headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
+        #         )
+        #     # deleting file
+        #     os.remove(file_path)
+        #     os.remove(human_file_path)
 
-            if  (response_img.status_code == 201) and (response_highlight.status_code == 201):
-                response_1 = json.loads(response_img.text)
-                response_2 = json.loads(response_highlight.text)
+        #     if  (response_img.status_code == 201) and (response_highlight.status_code == 201):
+        #         response_1 = json.loads(response_img.text)
+        #         response_2 = json.loads(response_highlight.text)
 
-                img_url = response_1["fileUrl"] if "fileUrl" in response_1 else None
-                highlight_url = response_2["fileUrl"] if "fileUrl" in response_2 else None
+        #         img_url = response_1["fileUrl"] if "fileUrl" in response_1 else None
+        #         highlight_url = response_2["fileUrl"] if "fileUrl" in response_2 else None
 
-                if img_url:
-                    response = req.post(
-                        f"{base_url}/{email_point}",
-                        headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
-                        data={
-                            "dataUrl":img_url,
-                            "highlightUrl":highlight_url,
-                            "reportDateStart": date_,
-                            "reportDateEnd": date_,
-                            "totalDetection":1,
-                        }
-                    )
+        #         if img_url:
+        #             response = req.post(
+        #                 f"{base_url}/{email_point}",
+        #                 headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
+        #                 data={
+        #                     "dataUrl":img_url,
+        #                     "highlightUrl":highlight_url,
+        #                     "reportDateStart": date_,
+        #                     "reportDateEnd": date_,
+        #                     "totalDetection":1,
+        #                 }
+        #             )
 
-                    print(
-                        "email response:\t",
-                        json.loads(
-                            response.text
-                        )
-                    )
-        # else:
-        #     time.sleep(1)
+        #             print(
+        #                 "email response:\t",
+        #                 json.loads(
+        #                     response.text
+        #                 )
+        #             )
+        # # else:
+        # #     time.sleep(1)
     elegant_shutdown.put(True)
 
 def SaveToDisk():
