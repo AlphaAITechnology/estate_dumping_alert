@@ -420,8 +420,10 @@ if __name__=='__main__':
     p2 = threading.Thread(target=Analyse)
     p3 = threading.Thread(target=Email)
     p4 = threading.Thread(target=SaveToDisk)
+    p5 = threading.Thread(target=WriteVideo)
     
     p1.start()
     p2.start()
     p3.start()
     p4.start()
+    p5.start()
