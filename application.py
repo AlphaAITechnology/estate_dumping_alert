@@ -293,7 +293,7 @@ def Analyse():
                                                     img_list_bh[-2], # before anything
                                                     himg, # last human image
                                                     img_list_bh[-1], # immediatly after human left,
-                                                    mask*255,
+                                                    # mask*255,
                                                     # img_list_bh[-1] * mask
                                                 ))
                                                 
