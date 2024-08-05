@@ -186,6 +186,9 @@ def Email():
                             response.text
                         )
                     )
+            del file_path
+            del human_file_path
+            del date_
         # else:
         #     time.sleep(1)
     elegant_shutdown.put(True)
@@ -203,6 +206,7 @@ def SaveToDisk():
 
                 cv.imwrite(himg_path, himg)
                 for_sending.put((img_path, himg_path, timestamp_))
+            del imgs_
 
         # else:
         #     time.sleep(1)
@@ -233,7 +237,7 @@ def Analyse():
 
 
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
-        if q.empty() != True:
+        if not q.empty():
             img, counter = q.get()
         
             detections = detect(model, img * hardcoded_mask, conf=0.2, classes=[0, 25])
@@ -333,7 +337,11 @@ def Analyse():
                 seen_flg = True
                 frames_since_last_spotted = 0
 
-            q.put((img, counter))
+
+
+            del img
+            del counter
+
             time.sleep(0.2)
 
         if cv.waitKey(1) & 0xFF == ord('q'):
@@ -346,18 +354,19 @@ def Receive():
     cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
     
     ret, frame = cap.read()
-    q.put((frame, 0))
     count = 1
 
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
-            if not q.empty():
+
+            while not q.empty():
                 v_ = q.get()
                 del v_
-                q.put((frame, count))
-                count += 1
-                count %= 1000000000
+
+            q.put((frame, count))
+            count += 1
+            count %= 1000000000
         else:
             cap.release()
             cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
