@@ -206,6 +206,8 @@ def SaveToDisk():
 
                 cv.imwrite(himg_path, himg)
                 for_sending.put((img_path, himg_path, timestamp_))
+                del himg
+                del img
 
         # else:
         #     time.sleep(1)
@@ -220,7 +222,10 @@ def WriteVideo():
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
         if not video_images.empty():
             if (not video_print_flg.empty()) and (video_print_flg.get()):
+                
                 video_imgs = video_images.get()
+                process_reset_flag.put(True)
+                print("In Writer; Disable All Recordings")
 
                 h, w, _ = video_imgs[0].shape
                 fps = 12.0
@@ -228,7 +233,11 @@ def WriteVideo():
 
                 for frame in video_imgs:
                     writer.write(frame)
+
+                del video_imgs
                 writer.release()
+
+                
 
                 print("Video Printing Reached 3")
 
@@ -337,6 +346,10 @@ def Analyse():
                         last_human_image = None
                     
             else:
+                if not seen_flg:
+                    human_process_flg.put(True)
+                    print("Humans seen for first time; setting video to record all")
+
                 human_np = humans.to_numpy()
                 img_ah_coor.extend(human_np.tolist())
 
@@ -374,6 +387,7 @@ def Receive():
     rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
     cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
     max_video_record_frames = 90
+    hporc_flag = False
     
     ret, frame = cap.read()
     q.put((frame, 0))
@@ -390,8 +404,20 @@ def Receive():
                 
                 video_imgs = [] if video_images.empty() else video_images.get()
                 video_imgs.append(frame.copy())
-                if len(video_imgs) > max_video_record_frames:
+                
+                if ((not process_reset_flag.empty()) and (process_reset_flag.get())):
+                    # reset the video making process
+                    print("In Reciever; Disable Recording All -- Reset")
+                    hporc_flag = False
+                    video_imgs = []
+                
+
+                # True if we need to record everything -- persistent on statying true
+                hporc_flag = hporc_flag or (human_process_flg.get() if not human_process_flg.empty() else False)
+                if ((not hporc_flag) and (len(video_imgs) > max_video_record_frames)):
                     video_imgs.pop(0)
+
+
                 video_images.put(video_imgs)
                 if count%100 == 0:
                     print(f"Video Read: {count}")
@@ -412,6 +438,8 @@ def Receive():
 
 video_images = queue.Queue()
 video_print_flg = queue.Queue()
+human_process_flg = queue.Queue()
+process_reset_flag = queue.Queue()
 
 q = queue.Queue()
 for_saving = queue.Queue()
