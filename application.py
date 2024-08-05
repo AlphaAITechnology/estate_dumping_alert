@@ -373,6 +373,7 @@ def Analyse():
 def Receive():
     rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
     cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
+    max_video_record_frames = 90
     
     ret, frame = cap.read()
     q.put((frame, 0))
@@ -389,7 +390,7 @@ def Receive():
                 
                 video_imgs = [] if video_images.empty() else video_images.get()
                 video_imgs.append(frame.copy())
-                if len(video_imgs) > 30:
+                if len(video_imgs) > max_video_record_frames:
                     video_imgs.pop(0)
                 video_images.put(video_imgs)
                 if count%100 == 0:
