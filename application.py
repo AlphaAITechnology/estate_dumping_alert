@@ -186,6 +186,9 @@ def Email():
         #                     response.text
         #                 )
         #             )
+        #     del file_path
+        #     del human_file_path
+        #     del date_
         # # else:
         # #     time.sleep(1)
     elegant_shutdown.put(True)
@@ -234,7 +237,7 @@ def Analyse():
 
 
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
-        if q.empty() != True:
+        if not q.empty():
             img, counter = q.get()
         
             detections = detect(model, img * hardcoded_mask, conf=0.2, classes=[0, 25])
@@ -334,6 +337,8 @@ def Analyse():
                 seen_flg = True
                 frames_since_last_spotted = 0
 
+
+
             del img
             del counter
 
@@ -354,7 +359,7 @@ def Receive():
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
-            
+
             while not q.empty():
                 v_ = q.get()
                 del v_
