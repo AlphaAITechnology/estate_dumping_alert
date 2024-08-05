@@ -1,2 +1,2 @@
 [] Use DBSCAN to create boxes 
-[] Record Video
+[x] Record Video
