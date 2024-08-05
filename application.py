@@ -230,6 +230,8 @@ def WriteVideo():
                     writer.write(frame)
                 writer.release()
 
+                print("Video Printing Reached 3")
+
             
     elegant_shutdown.put(True)
 
@@ -388,7 +390,8 @@ def Receive():
                 if len(video_imgs) > 30:
                     video_imgs.pop(0)
                 video_images.put(video_imgs)
-
+                if count%100 == 0:
+                    print(f"Video Read: {count}")
 
 
                 count += 1
