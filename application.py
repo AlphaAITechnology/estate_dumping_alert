@@ -224,6 +224,11 @@ def WriteVideo():
             if (not video_print_flg.empty()) and (video_print_flg.get()):
                 
                 video_imgs = video_images.get()
+                
+                
+                while not process_reset_flag.empty():
+                            v_ = process_reset_flag.get()
+                            del v_
                 process_reset_flag.put(True)
                 print("In Writer; Disable All Recordings")
 
@@ -236,10 +241,6 @@ def WriteVideo():
 
                 del video_imgs
                 writer.release()
-
-                
-
-                print("Video Printing Reached 3")
 
             
     elegant_shutdown.put(True)
@@ -269,7 +270,7 @@ def Analyse():
 
 
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
-        if q.empty() != True:
+        if not q.empty():
             img, counter = q.get()
         
             detections = detect(model, img * hardcoded_mask, conf=0.2, classes=[0, 25])
@@ -288,7 +289,8 @@ def Analyse():
                 if (not seen_flg):
 
                     if len(img_list_bh)>max_queue_threshold:
-                        img_list_bh.pop(0)
+                        t = img_list_bh.pop(0)
+                        del t
                     img_list_bh.append(img)
 
 
@@ -298,7 +300,6 @@ def Analyse():
                     if (frames_since_last_spotted > frames_since_last_spotted_threshold):
                         seen_flg = False
                         frames_since_last_spotted = 0
-                        
 
                         human_path_mask = np.zeros_like(img)
                         human_path_mask = get_human_path_mask(human_path_mask, img_ah_coor) * hardcoded_mask
@@ -344,6 +345,12 @@ def Analyse():
                         img_list_bh.clear()
                         img_ah_coor.clear()
                         last_human_image = None
+
+                        while not process_reset_flag.empty():
+                            v_ = process_reset_flag.get()
+                            del v_
+                        process_reset_flag.put(True)
+                        print("In Analysis; Disable All Recordings --> Irregardless of Hit") # empty everything
                     
             else:
                 if not seen_flg:
@@ -375,7 +382,10 @@ def Analyse():
                 seen_flg = True
                 frames_since_last_spotted = 0
 
-            q.put((img, counter))
+
+            del img
+            del counter
+
             time.sleep(0.2)
 
         if cv.waitKey(1) & 0xFF == ord('q'):
@@ -396,35 +406,40 @@ def Receive():
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
-            if not q.empty():
+
+            # Delete all while isn't empty
+            while not q.empty():
                 v_ = q.get()
                 del v_
-                q.put((frame, count))
+
+            q.put((frame, count))
+            video_imgs = [] if video_images.empty() else video_images.get()
+            video_imgs.append(frame.copy())
+            
+            if ((not process_reset_flag.empty()) and (process_reset_flag.get())):
+                # reset the video making process
+                print("In Reciever; Disable Recording All -- Reset")
+                hporc_flag = False
+                del video_imgs
+                video_imgs = []
+            
+
+            # True if we need to record everything -- persistent on statying true
+            hporc_flag = hporc_flag or (human_process_flg.get() if not human_process_flg.empty() else False)
+            if ((not hporc_flag) and (len(video_imgs) > max_video_record_frames)):
+                video_imgs.pop(0)
+
+
+            video_images.put(video_imgs)
+            if count%100 == 0:
+                print(f"Video Read: {count}")
+
+
+            count += 1
+            count %= 1000000000
+
 
                 
-                video_imgs = [] if video_images.empty() else video_images.get()
-                video_imgs.append(frame.copy())
-                
-                if ((not process_reset_flag.empty()) and (process_reset_flag.get())):
-                    # reset the video making process
-                    print("In Reciever; Disable Recording All -- Reset")
-                    hporc_flag = False
-                    video_imgs = []
-                
-
-                # True if we need to record everything -- persistent on statying true
-                hporc_flag = hporc_flag or (human_process_flg.get() if not human_process_flg.empty() else False)
-                if ((not hporc_flag) and (len(video_imgs) > max_video_record_frames)):
-                    video_imgs.pop(0)
-
-
-                video_images.put(video_imgs)
-                if count%100 == 0:
-                    print(f"Video Read: {count}")
-
-
-                count += 1
-                count %= 1000000000
         else:
             cap.release()
             cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
