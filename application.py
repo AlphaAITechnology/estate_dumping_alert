@@ -222,7 +222,7 @@ def WriteVideo():
             if (not video_print_flg.empty()) and (video_print_flg.get()):
                 video_imgs = video_images.get()
 
-                h, w, _ = video_images[0].shape
+                h, w, _ = video_imgs[0].shape
                 fps = 12.0
                 writer = cv.VideoWriter(f"./tmp/{datetime.datetime.now().isoformat()}.mkv", cv.VideoWriter.fourcc('M','J','P','G'), fps, (w, h))
 
@@ -296,6 +296,7 @@ def Analyse():
                         
                         # black out obstacles
                         if not obstacles.empty:
+                            print("Umbrealla being seen")
                             human_path_mask = mask_away_obstacles(obstacles, human_path_mask)
 
                         img_list_bh.append(img)
@@ -321,6 +322,7 @@ def Analyse():
                                                     himg, # last human image
                                                     img_list_bh[-1], # immediatly after human left,
                                                     mask*255,
+                                                    (np.ones_like(human_path_mask) - human_path_mask)*255
                                                     # img_list_bh[-1] * mask
                                                 ))
                                                 
