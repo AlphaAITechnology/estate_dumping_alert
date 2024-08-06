@@ -223,13 +223,13 @@ def Analyse():
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
     
 
-    max_queue_threshold = 15
+    max_queue_threshold = 5
     img_list_bh = []
     img_ah_coor = []
     
     seen_flg = False
     frames_since_last_spotted = 0
-    frames_since_last_spotted_threshold = 25
+    frames_since_last_spotted_threshold = 40
     minimum_human_confidence_trigger = 0.4
 
 
@@ -387,7 +387,7 @@ elegant_shutdown = queue.Queue()
 
 
 if __name__=='__main__':
-    model = torch.hub.load("ultralytics/yolov5", "yolov5s")  # Can be 'yolov5n' - 'yolov5x6', or 'custom'
+    model = torch.hub.load("ultralytics/yolov5", "yolov5m6")  # Can be 'yolov5n' - 'yolov5x6', or 'custom'
 
     p1 = threading.Thread(target=Receive)
     p2 = threading.Thread(target=Analyse)
