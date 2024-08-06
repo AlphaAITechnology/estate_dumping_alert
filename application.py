@@ -57,7 +57,7 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
         # m_ = cv.morphologyEx(m_, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=20)
         return np.stack((m_, m_, m_), axis=2)
 
-def detect(model, img, conf=0.4, classes=[0, 7, 25]):
+def detect(model, img, conf=0.4, classes=[0,7,25,14,15,16]):
     # Run inference
     results = model(img)
     res = results.pandas().xyxy[0]
@@ -223,7 +223,7 @@ def Analyse():
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
     
 
-    max_queue_threshold = 5
+    max_queue_threshold = 40
     img_list_bh = []
     img_ah_coor = []
     
@@ -240,10 +240,10 @@ def Analyse():
         if not q.empty():
             img, counter = q.get()
         
-            detections = detect(model, img * hardcoded_mask, conf=0.2, classes=[0, 25])
+            detections = detect(model, img * hardcoded_mask, conf=0.2, classes=[0, 7, 25, 14, 15, 16])
             
             humans = detections[detections["class"] == 0] #looking for human classes=[0]
-            obstacles = detections[detections["class"].isin([7,25])] #looking for trucks and umbrellas
+            obstacles = detections[detections["class"].isin([7,25,14,15,16])] #looking for trucks and umbrellas
 
             # if humans weren't seen before we want higher confidence to trigger, lower confidence to sustain
             humans = humans[humans["confidence"] >= minimum_human_confidence_trigger]
