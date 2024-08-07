@@ -365,8 +365,8 @@ def Receive():
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
-
             q.put((frame, count))
+
             count += 1
             count %= 1000000000
         
@@ -390,7 +390,7 @@ elegant_shutdown = queue.Queue()
 
 
 if __name__=='__main__':
-    model = torch.hub.load("ultralytics/yolov5", "yolov5m6")  # Can be 'yolov5n' - 'yolov5x6', or 'custom'
+    model = torch.hub.load("ultralytics/yolov5", "yolov5s")  # Can be 'yolov5n' - 'yolov5x6', or 'custom'
 
     p1 = threading.Thread(target=Receive)
     p2 = threading.Thread(target=Analyse)
