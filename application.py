@@ -209,7 +209,7 @@ def SaveToDisk():
                 for_sending.put((img_path, himg_path, timestamp_))
             del imgs_
 
-        print("Image Written to disk")
+            print("Image Written to disk")
 
         # else:
         #     time.sleep(1)
@@ -301,11 +301,19 @@ def Analyse():
                         img_list_bh.append(img)
                         mask = get_diff(img_list_bh, human_path_mask)
 
+                        if (mask is None):
+                            print(f"Image {counter}; MAsk is None")
+
 
                         if (mask is not None):
                             himg, _ = last_human_image
 
                             xyxy = get_changes_bbox(mask)
+
+                            if xyxy is None:
+                                print(f"Image {counter}; BBox is None")
+                                cv.imwrite(f"./tmp/BlankBBox_{counter}.png", mask*255)
+
                             if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
                                 (x1,y1), (x2,y2) = xyxy
                                 cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
@@ -337,6 +345,10 @@ def Analyse():
                         last_human_image = None
                     
             else:
+
+                print(f"Image {counter}; Human Seen;")
+
+
                 human_np = humans.to_numpy()
                 img_ah_coor.extend(human_np.tolist())
 
@@ -367,7 +379,7 @@ def Analyse():
             del img
             del counter
 
-            time.sleep(0.2)
+            # time.sleep(0.2)
 
     elegant_shutdown.put(True)
 
@@ -384,7 +396,6 @@ def Receive():
         ret, frame = cap.read()
         if ret:
             q.put((frame, count))
-            print(f"Read Image At Counter Number: {count}")
 
             count += 1
             count %= 1000000000
