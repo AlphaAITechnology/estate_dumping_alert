@@ -11,6 +11,10 @@
 
 
 
+have the standardization of q queue 
+
+
+
 1.7G    /media/AH001/uzair05/servers/building_waste_email/20240806_1059.mkv
 1.7G    /media/AH001/uzair05/servers/building_waste_email/20240805_1457.mkv
 1.5G    /media/AH001/uzair05/servers/building_waste_email/20240805_1800.mkv

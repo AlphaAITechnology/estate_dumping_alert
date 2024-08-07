@@ -185,9 +185,9 @@ def Email():
         #                     response.text
         #                 )
         #             )
-        #     del file_path
-        #     del human_file_path
-        #     del date_
+            del file_path
+            del human_file_path
+            del date_
         # # else:
         # #     time.sleep(1)
     elegant_shutdown.put(True)
@@ -228,7 +228,7 @@ def Analyse():
     
     seen_flg = False
     frames_since_last_spotted = 0
-    frames_since_last_spotted_threshold = 40
+    frames_since_last_spotted_threshold = 15
     minimum_human_confidence_trigger = 0.4
 
 
@@ -237,7 +237,15 @@ def Analyse():
 
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
         if not q.empty():
+
+            # Only get most recent frame and discard entire queue of backlogged images --> going as fast as possible
             img, counter = q.get()
+            with q.mutex:
+                try:
+                    q.queue.clear()
+                except:
+                    print("Image Queue Emptying Failed")
+            
         
             detections = detect(model, img * hardcoded_mask, conf=0.2, classes=[0, 7, 25, 14, 15, 16])
             
@@ -343,9 +351,6 @@ def Analyse():
 
             time.sleep(0.2)
 
-        if cv.waitKey(1) & 0xFF == ord('q'):
-            break
-
     elegant_shutdown.put(True)
 
 def Receive():
@@ -360,10 +365,6 @@ def Receive():
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
-
-            while not q.empty():
-                v_ = q.get()
-                del v_
 
             q.put((frame, count))
             count += 1
