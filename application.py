@@ -67,7 +67,6 @@ def detect(model, img, conf=0.4, classes=[0,7,25,14,15,16]):
     res = res[res["confidence"]>=conf]
     return res[res["class"].isin(classes)] #res[["xmin", "ymin", "xmax", "ymax"]]
 
-
 def mask_away_obstacles(obstacle_df, mask):
     
     x1,y1,x2,y2 = [int(i) for i in obstacle_df.to_numpy().tolist()[0]]
@@ -94,7 +93,6 @@ def get_human_path_mask(human_path_mask, coor_list=[]):
     hull_points = cv.convexHull(np.array(coor_list_), returnPoints=True).reshape((-1,2))
     cv.fillPoly(human_path_mask, pts=[hull_points], color=(255,255,255))
     return np.uint8(np.where(human_path_mask==255, 1, 0))
-
 
 def get_changes_bbox(mask):
     
@@ -317,7 +315,6 @@ def Analyse():
 
                             if xyxy is None:
                                 print(f"Image {counter}; BBox is None")
-                                cv.imwrite(f"./tmp/BlankBBox_{counter}.png", mask*255)
 
                             if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
                                 (x1,y1), (x2,y2) = xyxy
