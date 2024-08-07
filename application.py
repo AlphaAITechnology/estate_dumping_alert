@@ -97,15 +97,17 @@ def get_human_path_mask(human_path_mask, coor_list=[]):
 
 
 def get_changes_bbox(mask):
+    
     res = []
-    x = np.add.reduce(mask, axis=2) == 3
+    x = mask[:,:,0] == 1
+    
     idx = [i for i in zip(np.argmax(x, axis=1).tolist(), (x.shape[1] - np.argmax(x[:,::-1], axis=1)).tolist())]
     for i, (r1, r2) in enumerate(idx):
         if (r2 <= r1):
             continue
         if (r1==0 and not(x[i, r1])):
             continue
-        if (np.bitwise_or.reduce(x[i, r1:r2]) and np.bitwise_not(np.bitwise_and.reduce(x[i, r1:r2]))):
+        if (np.bitwise_or.reduce(x[i, r1:r2])):
             res.append((r1,r2))
 
     if len(res)>0:
@@ -120,13 +122,16 @@ def get_changes_bbox(mask):
                 continue
             if (r1==0 and not(x[i, r1])):
                 continue
-            if (np.bitwise_or.reduce(x[i, r1:r2]) and np.bitwise_not(np.bitwise_and.reduce(x[i, r1:r2]))):
+            if (np.bitwise_or.reduce(x[i, r1:r2])):
                 res.append((r1,r2))
         if len(res)>0:
             y1,y2 = np.min(np.array([i for i, _ in res]).reshape((-1,))), np.max(np.array([i for  _,i in res]).reshape((-1,)))
 
             return ((x1,y1), (x2,y2))
+        
+        
         else:
+
             return None
     return None
 
@@ -385,7 +390,7 @@ def Analyse():
 
 def Receive():
     rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
-    file_uri = "../20240805_1253.mkv"
+    file_uri = "../20240806_1059.mkv"
     cap = cv.VideoCapture(file_uri, cv.CAP_FFMPEG)
     # cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
     
