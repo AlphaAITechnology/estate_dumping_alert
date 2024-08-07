@@ -12,7 +12,7 @@ import gzip
 
 
 
-def get_diff(img_list, human_path_mask = None, threshold=None):
+def get_diff(img_list, human_path_mask = None, threshold=10):
         if not (len(img_list) > 1):
                 return None
         
@@ -23,38 +23,15 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
         img_bh = cv.GaussianBlur(img_bh, (15,15), cv.BORDER_DEFAULT) * human_path_mask
         img_ah = cv.GaussianBlur(img_ah, (15,15), cv.BORDER_DEFAULT) * human_path_mask
 
-        img_bh = cv.cvtColor(img_bh, cv.COLOR_BGR2Lab).astype(np.float32)
-        img_ah = cv.cvtColor(img_ah, cv.COLOR_BGR2Lab).astype(np.float32)
+        img_bh = cv.cvtColor(img_bh, cv.COLOR_BGR2Lab).astype(np.float32)[:,:,1:] - 127
+        img_ah = cv.cvtColor(img_ah, cv.COLOR_BGR2Lab).astype(np.float32)[:,:,1:] - 127
 
+        m_ = np.where(np.sqrt(np.add.reduce(np.square(img_ah - img_bh), axis=2)) >= threshold, 1, 0).astype(np.uint8)
+        m_ = cv.GaussianBlur(np.stack((m_, m_, m_), axis=2)*255, (15,15), 0)
+        m_ = np.where(m_[:,:,0]>0, 1, 0).astype(np.uint8)
 
-        # # median of difference in L
-        # median_L = np.median((img_ah[:,:,0] - img_bh[:,:,0]).reshape((-1,)))
-
-        # Disconsider the L in CIELab
-        img_bh = img_bh[:,:,1:]
-        img_ah = img_ah[:,:,1:]
-
-        # Bring np.uint8 to proper np.float32 format for CIELab
-        img_bh -= np.float32(127)
-        img_ah -= np.float32(127)
-                
-        two_stack_mask = np.minimum(
-                np.minimum(
-                        np.abs(img_ah - img_bh),
-                        np.abs(img_ah - img_bh + 256)
-                ),
-                np.abs(img_ah - img_bh - 256)
-        )
-
-        threshold = (threshold if threshold is not None else np.square(3.5))
-        m_ = np.where(
-            (np.where(two_stack_mask[:,:,0] > threshold, 1, 0) + np.where(two_stack_mask[:,:,1] > threshold, 1, 0)) > 0, 1, 0
-        ).astype(np.uint8)
-
-
-        m_ = cv.morphologyEx(m_, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=10)
-        # m_ = cv.morphologyEx(m_, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=20)
         return np.stack((m_, m_, m_), axis=2)
+
 
 def detect(model, img, conf=0.4, classes=[0,7,25,14,15,16]):
     # Run inference
