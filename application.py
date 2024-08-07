@@ -8,7 +8,6 @@ import datetime
 import requests as req
 import os
 import json
-import pandas as pd
 import gzip
 
 
@@ -47,7 +46,7 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
                 np.abs(img_ah - img_bh - 256)
         )
 
-        threshold = (threshold if threshold is not None else np.square(2.3))
+        threshold = (threshold if threshold is not None else np.square(3.5))
         m_ = np.where(
             (np.where(two_stack_mask[:,:,0] > threshold, 1, 0) + np.where(two_stack_mask[:,:,1] > threshold, 1, 0)) > 0, 1, 0
         ).astype(np.uint8)
@@ -219,12 +218,11 @@ def SaveToDisk():
 def Analyse():
     # hard coded a mask to remove streets
     with gzip.open("street_container_mask.csv.gz", 'rt') as file:
-        # hc_mask = pd.read_csv(file, header=None).to_numpy().astype(np.uint8)
         hc_mask = np.loadtxt(file).astype(np.uint8)
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
     
 
-    max_queue_threshold = 40
+    max_queue_threshold = 15
     img_list_bh = []
     img_ah_coor = []
     
@@ -352,7 +350,9 @@ def Analyse():
 
 def Receive():
     rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
-    cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
+    file_uri = "../20240805_1253.mkv"
+    cap = cv.VideoCapture(file_uri, cv.CAP_FFMPEG)
+    # cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
     
     ret, frame = cap.read()
     count = 1
@@ -368,9 +368,10 @@ def Receive():
             q.put((frame, count))
             count += 1
             count %= 1000000000
+        
         else:
             cap.release()
-            cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
+            # cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
 
 
         # if cap.get(cv.CAP_PROP_BUFFERSIZE) > 1:
