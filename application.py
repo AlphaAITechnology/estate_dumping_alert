@@ -141,6 +141,8 @@ def Email():
         if (not for_sending.empty()):
             file_path, human_file_path, date_ = for_sending.get()
 
+            print("Image Read from disk")
+
         #     with open(file_path, "rb") as files_:
         #         # storing file
         #         response_img = req.post(
@@ -207,6 +209,8 @@ def SaveToDisk():
                 for_sending.put((img_path, himg_path, timestamp_))
             del imgs_
 
+        print("Image Written to disk")
+
         # else:
         #     time.sleep(1)
             
@@ -245,6 +249,8 @@ def Analyse():
                     q.queue.clear()
                 except:
                     print("Image Queue Emptying Failed")
+
+            print(f"Image {counter} get from queue")
             
         
             detections = detect(model, img * hardcoded_mask, conf=0.2, classes=[0, 7, 25, 14, 15, 16])
@@ -260,7 +266,12 @@ def Analyse():
 
             
             if (humans.empty):
+                
+                print(f"Image {counter} Has no humans", end="\t")
+
                 if (not seen_flg):
+
+                    print(f"Image {counter} never saw it before.")
 
                     if len(img_list_bh)>max_queue_threshold:
                         img_list_bh.pop(0)
@@ -268,9 +279,14 @@ def Analyse():
 
 
                 else:
+
+                    print(f"Image {counter} saw it before.")
                     
                     frames_since_last_spotted += 1
                     if (frames_since_last_spotted > frames_since_last_spotted_threshold):
+
+                        print(f"Image {counter}; Human Exit Timeout; Will Print Diff")
+
                         seen_flg = False
                         frames_since_last_spotted = 0
                         
@@ -293,6 +309,8 @@ def Analyse():
                             if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
                                 (x1,y1), (x2,y2) = xyxy
                                 cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
+
+                                print(f"Image {counter}; Changes Found; Drawing BBox")
 
 
                                 for_saving.put(
@@ -366,6 +384,7 @@ def Receive():
         ret, frame = cap.read()
         if ret:
             q.put((frame, count))
+            print(f"Read Image At Counter Number: {count}")
 
             count += 1
             count %= 1000000000
