@@ -50,7 +50,7 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
             (np.where(two_stack_mask[:,:,0] > threshold, 1, 0) + np.where(two_stack_mask[:,:,1] > threshold, 1, 0)) > 0, 1, 0
         ).astype(np.uint8)
 
-        m_ = cv.morphologyEx(m_, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=10)
+        m_ = cv.morphologyEx(m_, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=12)
         return np.stack((m_, m_, m_), axis=2)
 
 
@@ -235,7 +235,7 @@ def Analyse():
     seen_flg = False
     frames_since_last_spotted = 0
     frames_since_last_spotted_threshold = 30
-    minimum_human_confidence_trigger = 0.4
+    minimum_human_confidence_trigger = 0.35
 
 
     last_human_image = None # stores image holding photo of humans
@@ -253,7 +253,7 @@ def Analyse():
                     print("Image Queue Emptying Failed")
             
         
-            detections = detect(model, img * hardcoded_mask, conf=0.2, classes=[0, 7, 25, 14, 15, 16])
+            detections = detect(model, img * hardcoded_mask, conf=0.3, classes=[0, 7, 25, 14, 15, 16])
             
             humans = detections[detections["class"] == 0] #looking for human classes=[0]
             obstacles = detections[detections["class"].isin([7,25,14,15,16])] #looking for trucks and umbrellas
