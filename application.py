@@ -90,8 +90,12 @@ def get_human_path_mask(human_path_mask, coor_list=[]):
         coor_list_.append((x2,y1))
 
     hull_points = cv.convexHull(np.array(coor_list_), returnPoints=True).reshape((-1,2))
+
     cv.fillPoly(human_path_mask, pts=[hull_points], color=(255,255,255))
-    return np.uint8(np.where(human_path_mask==255, 1, 0))
+    human_path_mask = np.uint8(np.where(human_path_mask==255, 1, 0))
+    human_path_mask = cv.dilate(human_path_mask, kernel=cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=5)
+
+    return human_path_mask
 
 def get_changes_bbox(mask):
     
