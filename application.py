@@ -8,7 +8,6 @@ import datetime
 import requests as req
 import os
 import json
-import pandas as pd
 import gzip
 
 
@@ -27,13 +26,10 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
         img_bh = cv.cvtColor(img_bh, cv.COLOR_BGR2Lab).astype(np.float32)
         img_ah = cv.cvtColor(img_ah, cv.COLOR_BGR2Lab).astype(np.float32)
 
-
-        # # median of difference in L
-        # median_L = np.median((img_ah[:,:,0] - img_bh[:,:,0]).reshape((-1,)))
-
         # Disconsider the L in CIELab
         img_bh = img_bh[:,:,1:]
         img_ah = img_ah[:,:,1:]
+
 
         # Bring np.uint8 to proper np.float32 format for CIELab
         img_bh -= np.float32(127)
@@ -47,17 +43,19 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
                 np.abs(img_ah - img_bh - 256)
         )
 
+
+
         threshold = (threshold if threshold is not None else np.square(2.3))
         m_ = np.where(
             (np.where(two_stack_mask[:,:,0] > threshold, 1, 0) + np.where(two_stack_mask[:,:,1] > threshold, 1, 0)) > 0, 1, 0
         ).astype(np.uint8)
 
-
         m_ = cv.morphologyEx(m_, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=10)
-        # m_ = cv.morphologyEx(m_, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=20)
         return np.stack((m_, m_, m_), axis=2)
 
-def detect(model, img, conf=0.4, classes=[0, 7, 25]):
+
+
+def detect(model, img, conf=0.4, classes=[0,7,25,14,15,16]):
     # Run inference
     results = model(img)
     res = results.pandas().xyxy[0]
@@ -67,7 +65,6 @@ def detect(model, img, conf=0.4, classes=[0, 7, 25]):
 
     res = res[res["confidence"]>=conf]
     return res[res["class"].isin(classes)] #res[["xmin", "ymin", "xmax", "ymax"]]
-
 
 def mask_away_obstacles(obstacle_df, mask):
     
@@ -96,17 +93,18 @@ def get_human_path_mask(human_path_mask, coor_list=[]):
     cv.fillPoly(human_path_mask, pts=[hull_points], color=(255,255,255))
     return np.uint8(np.where(human_path_mask==255, 1, 0))
 
-
 def get_changes_bbox(mask):
+    
     res = []
-    x = np.add.reduce(mask, axis=2) == 3
+    x = mask[:,:,0] == 1
+    
     idx = [i for i in zip(np.argmax(x, axis=1).tolist(), (x.shape[1] - np.argmax(x[:,::-1], axis=1)).tolist())]
     for i, (r1, r2) in enumerate(idx):
         if (r2 <= r1):
             continue
         if (r1==0 and not(x[i, r1])):
             continue
-        if (np.bitwise_or.reduce(x[i, r1:r2]) and np.bitwise_not(np.bitwise_and.reduce(x[i, r1:r2]))):
+        if (np.bitwise_or.reduce(x[i, r1:r2])):
             res.append((r1,r2))
 
     if len(res)>0:
@@ -121,13 +119,16 @@ def get_changes_bbox(mask):
                 continue
             if (r1==0 and not(x[i, r1])):
                 continue
-            if (np.bitwise_or.reduce(x[i, r1:r2]) and np.bitwise_not(np.bitwise_and.reduce(x[i, r1:r2]))):
+            if (np.bitwise_or.reduce(x[i, r1:r2])):
                 res.append((r1,r2))
         if len(res)>0:
             y1,y2 = np.min(np.array([i for i, _ in res]).reshape((-1,))), np.max(np.array([i for  _,i in res]).reshape((-1,)))
 
             return ((x1,y1), (x2,y2))
+        
+        
         else:
+
             return None
     return None
 
@@ -219,7 +220,7 @@ def SaveToDisk():
 def Analyse():
     # hard coded a mask to remove streets
     with gzip.open("street_container_mask.csv.gz", 'rt') as file:
-        hc_mask = pd.read_csv(file, header=None).to_numpy().astype(np.uint8)
+        hc_mask = np.loadtxt(file).astype(np.uint8)
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
     
 
@@ -238,12 +239,20 @@ def Analyse():
 
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
         if not q.empty():
+
+            # Only get most recent frame and discard entire queue of backlogged images --> going as fast as possible
             img, counter = q.get()
+            with q.mutex:
+                try:
+                    q.queue.clear()
+                except:
+                    print("Image Queue Emptying Failed")
+            
         
-            detections = detect(model, img * hardcoded_mask, conf=0.2, classes=[0, 25])
+            detections = detect(model, img * hardcoded_mask, conf=0.2, classes=[0, 7, 25, 14, 15, 16])
             
             humans = detections[detections["class"] == 0] #looking for human classes=[0]
-            obstacles = detections[detections["class"].isin([7,25])] #looking for trucks and umbrellas
+            obstacles = detections[detections["class"].isin([7,25,14,15,16])] #looking for trucks and umbrellas
 
             # if humans weren't seen before we want higher confidence to trigger, lower confidence to sustain
             humans = humans[humans["confidence"] >= minimum_human_confidence_trigger]
@@ -254,16 +263,16 @@ def Analyse():
             
             if (humans.empty):
                 if (not seen_flg):
-
                     if len(img_list_bh)>max_queue_threshold:
                         img_list_bh.pop(0)
                     img_list_bh.append(img)
 
 
                 else:
-                    
+
                     frames_since_last_spotted += 1
                     if (frames_since_last_spotted > frames_since_last_spotted_threshold):
+
                         seen_flg = False
                         frames_since_last_spotted = 0
                         
@@ -283,10 +292,10 @@ def Analyse():
                             himg, _ = last_human_image
 
                             xyxy = get_changes_bbox(mask)
+
                             if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
                                 (x1,y1), (x2,y2) = xyxy
                                 cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
-
 
                                 for_saving.put(
                                     (
@@ -312,6 +321,7 @@ def Analyse():
                         last_human_image = None
                     
             else:
+
                 human_np = humans.to_numpy()
                 img_ah_coor.extend(human_np.tolist())
 
@@ -342,10 +352,7 @@ def Analyse():
             del img
             del counter
 
-            time.sleep(0.2)
-
-        if cv.waitKey(1) & 0xFF == ord('q'):
-            break
+            # time.sleep(0.2)
 
     elegant_shutdown.put(True)
 
@@ -359,14 +366,11 @@ def Receive():
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
-
-            while not q.empty():
-                v_ = q.get()
-                del v_
-
             q.put((frame, count))
+
             count += 1
             count %= 1000000000
+        
         else:
             cap.release()
             cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
