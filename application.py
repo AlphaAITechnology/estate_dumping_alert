@@ -26,11 +26,6 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
         img_bh = cv.cvtColor(img_bh, cv.COLOR_BGR2Lab).astype(np.float32)
         img_ah = cv.cvtColor(img_ah, cv.COLOR_BGR2Lab).astype(np.float32)
 
-
-        # # median of difference in L
-        # median_L = np.median((img_ah[:,:,0] - img_bh[:,:,0]).reshape((-1,)))
-
-
         # Disconsider the L in CIELab
         img_bh = img_bh[:,:,1:]
         img_ah = img_ah[:,:,1:]
@@ -55,12 +50,10 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
             (np.where(two_stack_mask[:,:,0] > threshold, 1, 0) + np.where(two_stack_mask[:,:,1] > threshold, 1, 0)) > 0, 1, 0
         ).astype(np.uint8)
 
-        
-
-
         m_ = cv.morphologyEx(m_, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=10)
-        # m_ = cv.morphologyEx(m_, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=20)
         return np.stack((m_, m_, m_), axis=2)
+
+
 
 def detect(model, img, conf=0.4, classes=[0,7,25,14,15,16]):
     # Run inference
