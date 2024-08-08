@@ -30,21 +30,10 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
         # # median of difference in L
         # median_L = np.median((img_ah[:,:,0] - img_bh[:,:,0]).reshape((-1,)))
 
-        # Reallocate the L in CIELab
-        img_bhL = img_bh[:,:,0]
-        img_ahL = img_ah[:,:,0]
-
 
         # Disconsider the L in CIELab
         img_bh = img_bh[:,:,1:]
         img_ah = img_ah[:,:,1:]
-
-
-        difference_in_L = (img_bhL - img_ahL)
-        difference_in_ab = np.sqrt(np.add.reduce(np.square(img_ah - img_ahL), axis=2))
-        cmobined_diff = np.logical_or(difference_in_ab<2.3, difference_in_L > np.square(2.3)*2)
-
-
 
 
         # Bring np.uint8 to proper np.float32 format for CIELab
