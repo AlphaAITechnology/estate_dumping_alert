@@ -46,7 +46,8 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
                 np.abs(img_ah - img_bh - 256)
         )
 
-        threshold = (threshold if threshold is not None else np.square(3.5))
+        threshold = (threshold if threshold is not None else np.square(2.3 
+                                                                       ))
         m_ = np.where(
             (np.where(two_stack_mask[:,:,0] > threshold, 1, 0) + np.where(two_stack_mask[:,:,1] > threshold, 1, 0)) > 0, 1, 0
         ).astype(np.uint8)
@@ -235,7 +236,7 @@ def Analyse():
     
     seen_flg = False
     frames_since_last_spotted = 0
-    frames_since_last_spotted_threshold = 15
+    frames_since_last_spotted_threshold = 25
     minimum_human_confidence_trigger = 0.4
 
 
@@ -332,7 +333,7 @@ def Analyse():
                                                     img_list_bh[-2], # before anything
                                                     himg, # last human image
                                                     img_list_bh[-1], # immediatly after human left,
-                                                    mask*255,
+                                                    # mask*255,
                                                     # img_list_bh[-1] * mask
                                                 ))
                                                 
@@ -387,9 +388,7 @@ def Analyse():
 
 def Receive():
     rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
-    file_uri = "../20240806_1059.mkv"
-    cap = cv.VideoCapture(file_uri, cv.CAP_FFMPEG)
-    # cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
+    cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
     
     ret, frame = cap.read()
     count = 1
@@ -404,7 +403,7 @@ def Receive():
         
         else:
             cap.release()
-            # cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
+            cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
 
 
         # if cap.get(cv.CAP_PROP_BUFFERSIZE) > 1:

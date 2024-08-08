@@ -8,19 +8,3 @@
 [x] Longer Container
 [] Shadows issue
 [x] Longer Time Frame
-
-
-
-have the standardization of q queue 
-
-
-
-1.7G    /media/AH001/uzair05/servers/building_waste_email/20240806_1059.mkv
-1.7G    /media/AH001/uzair05/servers/building_waste_email/20240805_1457.mkv
-1.5G    /media/AH001/uzair05/servers/building_waste_email/20240805_1800.mkv
-1.2G    /media/AH001/uzair05/servers/building_waste_email/20240805_1253.mkv
-610M    /media/AH001/uzair05/servers/building_waste_email/20240802_.mkv
-539M    /media/AH001/uzair05/servers/building_waste_email/20240802_1056.mkv
-315M    /media/AH001/uzair05/servers/building_waste_email/20240802_1704.mkv
-295M    /media/AH001/uzair05/servers/building_waste_email/20240805_1058.mkv
-294M    /media/AH001/uzair05/servers/building_waste_email/20240805_1003.mkv
