@@ -50,7 +50,7 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
             (np.where(two_stack_mask[:,:,0] > threshold, 1, 0) + np.where(two_stack_mask[:,:,1] > threshold, 1, 0)) > 0, 1, 0
         ).astype(np.uint8)
 
-        m_ = cv.morphologyEx(m_, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=10)
+        m_ = cv.morphologyEx(m_, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=12)
         return np.stack((m_, m_, m_), axis=2)
 
 
@@ -90,8 +90,12 @@ def get_human_path_mask(human_path_mask, coor_list=[]):
         coor_list_.append((x2,y1))
 
     hull_points = cv.convexHull(np.array(coor_list_), returnPoints=True).reshape((-1,2))
+
     cv.fillPoly(human_path_mask, pts=[hull_points], color=(255,255,255))
-    return np.uint8(np.where(human_path_mask==255, 1, 0))
+    human_path_mask = np.uint8(np.where(human_path_mask==255, 1, 0))
+    human_path_mask = cv.dilate(human_path_mask, kernel=cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=3)
+
+    return human_path_mask
 
 def get_changes_bbox(mask):
     
@@ -224,14 +228,14 @@ def Analyse():
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
     
 
-    max_queue_threshold = 15
+    max_queue_threshold = 20
     img_list_bh = []
     img_ah_coor = []
     
     seen_flg = False
     frames_since_last_spotted = 0
-    frames_since_last_spotted_threshold = 25
-    minimum_human_confidence_trigger = 0.4
+    frames_since_last_spotted_threshold = 30
+    minimum_human_confidence_trigger = 0.35
 
 
     last_human_image = None # stores image holding photo of humans
@@ -249,7 +253,7 @@ def Analyse():
                     print("Image Queue Emptying Failed")
             
         
-            detections = detect(model, img * hardcoded_mask, conf=0.2, classes=[0, 7, 25, 14, 15, 16])
+            detections = detect(model, img * hardcoded_mask, conf=0.3, classes=[0, 7, 25, 14, 15, 16])
             
             humans = detections[detections["class"] == 0] #looking for human classes=[0]
             obstacles = detections[detections["class"].isin([7,25,14,15,16])] #looking for trucks and umbrellas
@@ -296,6 +300,7 @@ def Analyse():
                             if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
                                 (x1,y1), (x2,y2) = xyxy
                                 cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
+
 
                                 for_saving.put(
                                     (
