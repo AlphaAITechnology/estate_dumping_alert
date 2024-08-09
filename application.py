@@ -93,7 +93,7 @@ def get_human_path_mask(human_path_mask, coor_list=[]):
 
     cv.fillPoly(human_path_mask, pts=[hull_points], color=(255,255,255))
     human_path_mask = np.uint8(np.where(human_path_mask==255, 1, 0))
-    human_path_mask = cv.dilate(human_path_mask, kernel=cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=5)
+    human_path_mask = cv.dilate(human_path_mask, kernel=cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=3)
 
     return human_path_mask
 
@@ -228,7 +228,7 @@ def Analyse():
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
     
 
-    max_queue_threshold = 15
+    max_queue_threshold = 20
     img_list_bh = []
     img_ah_coor = []
     
@@ -300,6 +300,7 @@ def Analyse():
                             if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
                                 (x1,y1), (x2,y2) = xyxy
                                 cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
+
 
                                 for_saving.put(
                                     (
