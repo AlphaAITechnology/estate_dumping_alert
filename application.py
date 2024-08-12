@@ -144,63 +144,64 @@ def Email():
     email_point = "email/send"
 
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
-        if (not for_sending.empty()):
+        while(not for_sending.empty()):
             file_path, human_file_path, date_ = for_sending.get()
 
-        #     with open(file_path, "rb") as files_:
-        #         # storing file
-        #         response_img = req.post(
-        #             f"{base_url}/{upload_point}",
-        #             files={'file': (file_path, files_, 'image/webp')},
-        #             headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
-        #         )
-        #     with open(human_file_path, "rb") as files_:
-        #         # storing file
-        #         response_highlight = req.post(
-        #             f"{base_url}/{upload_point}",
-        #             files={'file': (human_file_path, files_, 'image/webp')},
-        #             headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
-        #         )
-        #     # deleting file
-        #     os.remove(file_path)
-        #     os.remove(human_file_path)
+            # with open(file_path, "rb") as files_:
+            #     # storing file
+            #     response_img = req.post(
+            #         f"{base_url}/{upload_point}",
+            #         files={'file': (file_path, files_, 'image/webp')},
+            #         headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
+            #     )
+            # with open(human_file_path, "rb") as files_:
+            #     # storing file
+            #     response_highlight = req.post(
+            #         f"{base_url}/{upload_point}",
+            #         files={'file': (human_file_path, files_, 'image/webp')},
+            #         headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
+            #     )
+            # # deleting file
+            # os.remove(file_path)
+            # os.remove(human_file_path)
 
-        #     if  (response_img.status_code == 201) and (response_highlight.status_code == 201):
-        #         response_1 = json.loads(response_img.text)
-        #         response_2 = json.loads(response_highlight.text)
+            # if  (response_img.status_code == 201) and (response_highlight.status_code == 201):
+            #     response_1 = json.loads(response_img.text)
+            #     response_2 = json.loads(response_highlight.text)
 
-        #         img_url = response_1["fileUrl"] if "fileUrl" in response_1 else None
-        #         highlight_url = response_2["fileUrl"] if "fileUrl" in response_2 else None
+            #     img_url = response_1["fileUrl"] if "fileUrl" in response_1 else None
+            #     highlight_url = response_2["fileUrl"] if "fileUrl" in response_2 else None
 
-        #         if img_url:
-        #             response = req.post(
-        #                 f"{base_url}/{email_point}",
-        #                 headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
-        #                 data={
-        #                     "dataUrl":img_url,
-        #                     "highlightUrl":highlight_url,
-        #                     "reportDateStart": date_,
-        #                     "reportDateEnd": date_,
-        #                     "totalDetection":1,
-        #                 }
-        #             )
+            #     if img_url:
+            #         response = req.post(
+            #             f"{base_url}/{email_point}",
+            #             headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
+            #             data={
+            #                 "dataUrl":img_url,
+            #                 "highlightUrl":highlight_url,
+            #                 "reportDateStart": date_,
+            #                 "reportDateEnd": date_,
+            #                 "totalDetection":1,
+            #             }
+            #         )
 
-        #             print(
-        #                 "email response:\t",
-        #                 json.loads(
-        #                     response.text
-        #                 )
-        #             )
+            #         print(
+            #             "email response:\t",
+            #             json.loads(
+            #                 response.text
+            #             )
+            #         )
             del file_path
             del human_file_path
             del date_
-        # # else:
-        # #     time.sleep(1)
+
+        time.sleep(1/fps)
     elegant_shutdown.put(True)
 
 def SaveToDisk():
+    
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
-        if (not for_saving.empty()):
+        while(not for_saving.empty()):
             imgs_, timestamp_ = for_saving.get() # stored as (List(Tuple(Tuple(ND.ARRAY, str), Tuple(ND.ARRAY, str))), str)
 
             for (img, img_path), (himg, himg_path) in imgs_:
@@ -213,9 +214,8 @@ def SaveToDisk():
                 for_sending.put((img_path, himg_path, timestamp_))
             del imgs_
 
-        # else:
-        #     time.sleep(1)
-            
+        
+        time.sleep(1/fps)    
     elegant_shutdown.put(True)
 
 
@@ -361,11 +361,13 @@ def Analyse():
 
     elegant_shutdown.put(True)
 
+
 def Receive():
     # rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
     rtsp_url = "rtsp://admin:12345678a@180.188.143.227:580"
     cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
     
+    global fps
     fps = cap.get(cv.CAP_PROP_FPS) % 100
     count = 1
 
@@ -392,7 +394,7 @@ def Receive():
 
 
 
-
+fps = 25.0
 q = queue.Queue()
 for_saving = queue.Queue()
 for_sending = queue.Queue()
