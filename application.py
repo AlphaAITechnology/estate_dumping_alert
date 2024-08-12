@@ -366,21 +366,24 @@ def Receive():
     rtsp_url = "rtsp://admin:12345678a@180.188.143.227:580"
     cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
     
-    ret, frame = cap.read()
+    fps = cap.get(cv.CAP_PROP_FPS) % 100
     count = 1
 
+    n = 0
     while cap.isOpened():
-        ret, frame = cap.read()
-        if ret:
-            q.put((frame, count))
+        cap.grab()
+        n = (n+1)%10 
+        if (n == 0): # grab every tenth frame
+            ret, frame = cap.retrieve()
+            if ret:
+                q.put((frame, count))
+                count = (count + 1) % 1000000000
+            
+            else:
+                cap.release()
+                cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
 
-            count += 1
-            count %= 1000000000
-        
-        else:
-            cap.release()
-            cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
-
+        time.sleep(1/fps) # do not read a single frame more than once
 
         # if cap.get(cv.CAP_PROP_BUFFERSIZE) > 1:
         #     cap.set(cv.CAP_PROP_BUFFERSIZE, 1)
