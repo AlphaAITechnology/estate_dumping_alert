@@ -195,7 +195,7 @@ def Email():
             del human_file_path
             del date_
 
-        time.sleep(1/fps)
+        # time.sleep(1/fps)
     elegant_shutdown.put(True)
 
 def SaveToDisk():
@@ -215,7 +215,7 @@ def SaveToDisk():
             del imgs_
 
         
-        time.sleep(1/fps)    
+        # time.sleep(1/fps)    
     elegant_shutdown.put(True)
 
 
@@ -372,26 +372,21 @@ def Receive():
     count = 1
 
     n = 0
-    while cap.isOpened():
-        cap.grab()
-        n = (n+1)%10 
-        if (n == 0): # grab every tenth frame
-            ret, frame = cap.retrieve()
-            if ret:
-                q.put((frame, count))
-                count = (count + 1) % 1000000000
-            
-            else:
-                cap.release()
-                cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
-
-        time.sleep(1/fps) # do not read a single frame more than once
-
-        # if cap.get(cv.CAP_PROP_BUFFERSIZE) > 1:
-        #     cap.set(cv.CAP_PROP_BUFFERSIZE, 1)
-
-    elegant_shutdown.put(True)
-
+    
+    try:
+        while cap.isOpened():
+            ret, frame = cap.read()
+            n = (n+1)%10 
+            if (n == 0): # grab every tenth frame
+                if ret:
+                    q.put((frame, count))
+                    count = (count + 1) % 1000000000
+                
+                    print(f"See Frame:\t{count}")
+    except:
+        cap.release()
+    finally:
+        elegant_shutdown.put(True)
 
 
 fps = 25.0
@@ -413,3 +408,5 @@ if __name__=='__main__':
     p2.start()
     p3.start()
     p4.start()
+
+    elegant_shutdown.put(True)
