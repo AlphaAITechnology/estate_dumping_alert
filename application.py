@@ -144,7 +144,7 @@ def Email():
     email_point = "email/send"
 
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
-        if (not for_sending.empty()):
+        while (not for_sending.empty()):
             file_path, human_file_path, date_ = for_sending.get()
 
         #     with open(file_path, "rb") as files_:
@@ -200,7 +200,7 @@ def Email():
 
 def SaveToDisk():
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
-        if (not for_saving.empty()):
+        while (not for_saving.empty()):
             imgs_, timestamp_ = for_saving.get() # stored as (List(Tuple(Tuple(ND.ARRAY, str), Tuple(ND.ARRAY, str))), str)
 
             for (img, img_path), (himg, himg_path) in imgs_:
@@ -212,6 +212,7 @@ def SaveToDisk():
                 cv.imwrite(himg_path, himg)
                 for_sending.put((img_path, himg_path, timestamp_))
             del imgs_
+            del timestamp_
 
         # else:
         #     time.sleep(1)
@@ -369,23 +370,20 @@ def Receive():
     ret, frame = cap.read()
     count = 1
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if ret:
-            q.put((frame, count))
+    try:
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if ret:
+                q.put((frame, count))
+                count = (count + 1)%1000000000
+    except:
+        cap.release()
+    finally:
+        elegant_shutdown.put(True)
 
-            count += 1
-            count %= 1000000000
         
-        else:
-            cap.release()
-            cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
-
-
-        # if cap.get(cv.CAP_PROP_BUFFERSIZE) > 1:
-        #     cap.set(cv.CAP_PROP_BUFFERSIZE, 1)
-
-    elegant_shutdown.put(True)
+        
+    
 
 
 
