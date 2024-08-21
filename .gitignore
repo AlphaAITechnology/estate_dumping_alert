@@ -4,8 +4,6 @@ tmp/*
 *.webp
 *.png
 *.mkv
-# street_mask.csv.gz
-*.csv
 
 test.py
 aid.py
