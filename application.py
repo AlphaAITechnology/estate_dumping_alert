@@ -223,6 +223,12 @@ def SaveToDisk():
 
 
 def Analyse():
+
+    # Background Screens to Remove Subtraction false positives
+    bkg_1 = cv.imread("./background_screens/screen_capture_2024-08-21T10:47:33.888537.png")
+
+
+
     # hard coded a mask to remove streets
     with gzip.open("street_container_mask.csv.gz", 'rt') as file:
         hc_mask = np.loadtxt(file).astype(np.uint8)
@@ -287,7 +293,7 @@ def Analyse():
                         
 
                         human_path_mask = np.zeros_like(img)
-                        human_path_mask = get_human_path_mask(human_path_mask, img_ah_coor) * hardcoded_mask
+                        human_path_mask = get_human_path_mask(human_path_mask, img_ah_coor) * (hardcoded_mask * less_hardcoded_mask)
                         
                         # black out obstacles
                         if not obstacles.empty:
@@ -295,6 +301,10 @@ def Analyse():
 
                         img_list_bh.append(img)
                         mask = get_diff(img_list_bh, human_path_mask)
+
+                        # After getting mask of changes -- subtract the standard background to remove false positives
+                        alt_mask = get_diff([bkg_1 * mask, img_list_bh[-1] * mask], human_path_mask) if mask is not None else None
+                        mask = alt_mask
 
 
                         if (mask is not None):
@@ -316,8 +326,10 @@ def Analyse():
                                                     img_list_bh[-2], # before anything
                                                     himg, # last human image
                                                     img_list_bh[-1], # immediatly after human left,
-                                                    # mask*255,
-                                                    # img_list_bh[-1] * mask
+                                                    mask*255,
+                                                    (human_path_mask*125) + (mask*100),
+                                                    (hardcoded_mask*125) + (mask*100),
+                                                    
                                                 ))
                                                 
                                                 , f"tmp/human_{counter:09}.jpeg")),
