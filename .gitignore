@@ -8,15 +8,9 @@ tmp/*
 
 test.py
 aid.py
-
 yolov5m6.pt
 
-
-
-!screen_capture_2024-08-21T10:47:33.888537.png
-
-
-
+!background_screens/*
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,windows,macos,python,pycharm,intellij,visualstudiocode,vim,emacs
