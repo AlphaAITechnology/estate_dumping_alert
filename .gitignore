@@ -4,16 +4,11 @@ tmp/*
 *.webp
 *.png
 *.mkv
-# street_mask.csv.gz
 *.csv
 
 test.py
 aid.py
-
-
-
-
-
+yolov5m6.pt
 
 yolov5m6.pt
 

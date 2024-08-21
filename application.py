@@ -144,7 +144,7 @@ def Email():
     email_point = "email/send"
 
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
-        if (not for_sending.empty()):
+        while (not for_sending.empty()):
             file_path, human_file_path, date_ = for_sending.get()
 
             with open(file_path, "rb") as files_:
@@ -200,7 +200,7 @@ def Email():
 
 def SaveToDisk():
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
-        if (not for_saving.empty()):
+        while (not for_saving.empty()):
             imgs_, timestamp_ = for_saving.get() # stored as (List(Tuple(Tuple(ND.ARRAY, str), Tuple(ND.ARRAY, str))), str)
 
             for (img, img_path), (himg, himg_path) in imgs_:
@@ -212,6 +212,7 @@ def SaveToDisk():
                 cv.imwrite(himg_path, himg)
                 for_sending.put((img_path, himg_path, timestamp_))
             del imgs_
+            del timestamp_
 
         # else:
         #     time.sleep(1)
@@ -222,10 +223,20 @@ def SaveToDisk():
 
 
 def Analyse():
+
+    # Background Screens to Remove Subtraction false positives
+    bkg_1 = cv.imread("./background_screens/screen_capture_2024-08-21T10:47:33.888537.png")
+
+
+
     # hard coded a mask to remove streets
     with gzip.open("street_container_mask.csv.gz", 'rt') as file:
         hc_mask = np.loadtxt(file).astype(np.uint8)
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
+
+    with gzip.open("street_backdrop_mask.csv.gz", 'rt') as sm_file:
+        lhc_mask = np.loadtxt(sm_file, delimiter=',').astype(np.uint8)
+        less_hardcoded_mask = np.stack((lhc_mask, lhc_mask, lhc_mask), axis=2)
     
 
     max_queue_threshold = 20
@@ -252,8 +263,8 @@ def Analyse():
                 except:
                     print("Image Queue Emptying Failed")
             
-        
-            detections = detect(model, img * hardcoded_mask, conf=0.3, classes=[0, 7, 25, 14, 15, 16])
+            # only remove street view when testing for humans
+            detections = detect(model, img * less_hardcoded_mask, conf=0.3, classes=[0, 7, 25, 14, 15, 16])
             
             humans = detections[detections["class"] == 0] #looking for human classes=[0]
             obstacles = detections[detections["class"].isin([7,25,14,15,16])] #looking for trucks and umbrellas
@@ -282,7 +293,7 @@ def Analyse():
                         
 
                         human_path_mask = np.zeros_like(img)
-                        human_path_mask = get_human_path_mask(human_path_mask, img_ah_coor) * hardcoded_mask
+                        human_path_mask = get_human_path_mask(human_path_mask, img_ah_coor) * (hardcoded_mask * less_hardcoded_mask)
                         
                         # black out obstacles
                         if not obstacles.empty:
@@ -291,12 +302,15 @@ def Analyse():
                         img_list_bh.append(img)
                         mask = get_diff(img_list_bh, human_path_mask)
 
+                        # After getting mask of changes -- subtract the standard background to remove false positives
+                        alt_mask = get_diff([bkg_1 * mask, img_list_bh[-1] * mask], human_path_mask) if mask is not None else None
+                        mask = alt_mask
+
 
                         if (mask is not None):
                             himg, _ = last_human_image
 
                             xyxy = get_changes_bbox(mask)
-
                             if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
                                 (x1,y1), (x2,y2) = xyxy
                                 cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
@@ -311,8 +325,10 @@ def Analyse():
                                                     img_list_bh[-2], # before anything
                                                     himg, # last human image
                                                     img_list_bh[-1], # immediatly after human left,
-                                                    # mask*255,
-                                                    # img_list_bh[-1] * mask
+                                                    mask*255,
+                                                    (human_path_mask*125) + (mask*100),
+                                                    (hardcoded_mask*125) + (mask*100),
+                                                    
                                                 ))
                                                 
                                                 , f"tmp/human_{counter:09}.jpeg")),
@@ -363,28 +379,24 @@ def Analyse():
 
 def Receive():
     rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
+    # rtsp_url = "rtsp://admin:12345678a@180.188.143.227:580"
     cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
-    
-    ret, frame = cap.read()
     count = 1
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if ret:
-            q.put((frame, count))
+    try:
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if ret:
+                q.put((frame, count))
+                count = (count + 1)%1000000000
+    except:
+        cap.release()
+    finally:
+        elegant_shutdown.put(True)
 
-            count += 1
-            count %= 1000000000
         
-        else:
-            cap.release()
-            cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
-
-
-        # if cap.get(cv.CAP_PROP_BUFFERSIZE) > 1:
-        #     cap.set(cv.CAP_PROP_BUFFERSIZE, 1)
-
-    elegant_shutdown.put(True)
+        
+    
 
 
 
