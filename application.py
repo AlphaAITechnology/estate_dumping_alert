@@ -234,7 +234,7 @@ def Analyse():
         hc_mask = np.loadtxt(file).astype(np.uint8)
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
 
-    with gzip.open("street_mask.csv.gz", 'rt') as sm_file:
+    with gzip.open("street_backdrop_mask.csv.gz", 'rt') as sm_file:
         lhc_mask = np.loadtxt(sm_file, delimiter=',').astype(np.uint8)
         less_hardcoded_mask = np.stack((lhc_mask, lhc_mask, lhc_mask), axis=2)
     
@@ -311,7 +311,6 @@ def Analyse():
                             himg, _ = last_human_image
 
                             xyxy = get_changes_bbox(mask)
-
                             if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
                                 (x1,y1), (x2,y2) = xyxy
                                 cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
