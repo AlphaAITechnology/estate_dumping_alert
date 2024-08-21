@@ -4,6 +4,7 @@ tmp/*
 *.webp
 *.png
 *.mkv
+*.csv
 
 test.py
 aid.py
