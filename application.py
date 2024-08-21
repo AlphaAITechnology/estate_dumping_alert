@@ -227,6 +227,10 @@ def Analyse():
     with gzip.open("street_container_mask.csv.gz", 'rt') as file:
         hc_mask = np.loadtxt(file).astype(np.uint8)
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
+
+    with gzip.open("street_mask.csv.gz", 'rt') as sm_file:
+        lhc_mask = np.loadtxt(sm_file, delimiter=',').astype(np.uint8)
+        less_hardcoded_mask = np.stack((lhc_mask, lhc_mask, lhc_mask), axis=2)
     
 
     max_queue_threshold = 20
@@ -253,8 +257,8 @@ def Analyse():
                 except:
                     print("Image Queue Emptying Failed")
             
-        
-            detections = detect(model, img * hardcoded_mask, conf=0.3, classes=[0, 7, 25, 14, 15, 16])
+            # only remove street view when testing for humans
+            detections = detect(model, img * less_hardcoded_mask, conf=0.3, classes=[0, 7, 25, 14, 15, 16])
             
             humans = detections[detections["class"] == 0] #looking for human classes=[0]
             obstacles = detections[detections["class"].isin([7,25,14,15,16])] #looking for trucks and umbrellas
@@ -363,11 +367,9 @@ def Analyse():
     elegant_shutdown.put(True)
 
 def Receive():
-    # rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
-    rtsp_url = "rtsp://admin:12345678a@180.188.143.227:580"
+    rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
+    # rtsp_url = "rtsp://admin:12345678a@180.188.143.227:580"
     cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
-    
-    ret, frame = cap.read()
     count = 1
 
     try:
