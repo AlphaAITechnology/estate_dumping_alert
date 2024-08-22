@@ -53,11 +53,9 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
         m_ = cv.morphologyEx(m_, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_RECT,(3, 3)), iterations=12)
         return np.stack((m_, m_, m_), axis=2)
 
-
-
-def detect(model, img, conf=0.4, classes=[0,7,25,14,15,16]):
+def detect(model, imgz, conf=0.4, classes=[0,7,25,14,15,16]):
     # Run inference
-    results = model(img)
+    results = model(imgz)
     res = results.pandas().xyxy[0]
 
     # 7, 25 --> truck, umbrella
@@ -135,7 +133,6 @@ def get_changes_bbox(mask):
 
             return None
     return None
-
 
 def find_all_bboxes(mask):
     dilated_mask = cv.dilate(mask.copy(), cv.getStructuringElement(cv.MORPH_RECT, (3,3)), iterations=10)
@@ -250,8 +247,8 @@ def SaveToDisk():
 def Analyse():
 
     # Background Screens to Remove Subtraction false positives
-    bkg_1 = cv.imread("./background_screens/screen_capture_2024-08-21T10:47:33.888537.png")
-
+    # bkg_1 = cv.imread("./background_screens/screen_capture_2024-08-21T10:47:33.888537.png")
+    prev_bkg = None
 
 
     # hard coded a mask to remove streets
@@ -271,7 +268,7 @@ def Analyse():
     seen_flg = False
     frames_since_last_spotted = 0
     frames_since_last_spotted_threshold = 30
-    minimum_human_confidence_trigger = 0.35
+    minimum_human_confidence_trigger = 0.5
 
 
     last_human_image = None # stores image holding photo of humans
@@ -289,7 +286,8 @@ def Analyse():
                     print("Image Queue Emptying Failed")
             
             # only remove street view when testing for humans
-            detections = detect(model, img * less_hardcoded_mask, conf=0.3, classes=[0, 7, 25, 14, 15, 16])
+            img_ = img*less_hardcoded_mask
+            detections = detect(model, img_, conf=0.3, classes=[0, 7, 25, 14, 15, 16])
             
             humans = detections[detections["class"] == 0] #looking for human classes=[0]
             obstacles = detections[detections["class"].isin([7,25,14,15,16])] #looking for trucks and umbrellas
@@ -328,19 +326,28 @@ def Analyse():
                         mask = get_diff(img_list_bh, human_path_mask)
 
                         # After getting mask of changes -- subtract the standard background to remove false positives
-                        alt_mask = get_diff([bkg_1 * mask, img_list_bh[-1] * mask], human_path_mask) if mask is not None else None
-                        mask = alt_mask
+                        if prev_bkg is not None:
+                            alt_mask = get_diff([prev_bkg * mask, img_list_bh[-1] * mask], human_path_mask) if mask is not None else None
+                            mask = alt_mask
 
 
                         if (mask is not None):
                             himg, _ = last_human_image
 
                             bboxes = find_all_bboxes(mask[:,:,0])
-                            if bboxes is not None: # if we don't find a minimum bbox then assume negative results and do nothing
-                                for bbox in bboxes:
+                            bboxes_ = []
+                            if bboxes is not None:
+                                for ((x1,y1), (x2,y2)) in bboxes:
+                                    if not ((np.abs(x1 - mask.shape[1])<200) and (np.sqrt(np.square(x1-x2) + np.square(y1-y2)) < 200)):
+                                        bboxes_.append(((x1,y1), (x2,y2)))
+
+
+                            if len(bboxes_) > 0: # if we don't find a minimum bbox then assume negative results and do nothing
+                                for bbox in bboxes_:
                                     (x1,y1), (x2,y2) = bbox
                                     cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
 
+                                prev_bkg = img_list_bh[-2]
 
                                 for_saving.put(
                                     (
