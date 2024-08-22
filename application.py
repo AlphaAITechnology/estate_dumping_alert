@@ -137,6 +137,31 @@ def get_changes_bbox(mask):
     return None
 
 
+def find_all_bboxes(mask):
+    dilated_mask = cv.dilate(mask.copy(), cv.getStructuringElement(cv.MORPH_RECT, (3,3)), iterations=10)
+    dilated_mask_img = np.stack((dilated_mask, dilated_mask, dilated_mask), axis=2)
+    dilated_mask_img_inv = (np.ones_like(dilated_mask_img) - dilated_mask_img)*255
+    
+    bboxes = []
+
+    h, w = mask.shape
+
+    prev_img = dilated_mask_img_inv.copy()
+    while True:
+        coors = np.argwhere(dilated_mask_img_inv[..., 0] == 0)
+        if coors.size == 0:
+            break
+
+        coor_h, coor_w = coors[0, :]
+        cv.floodFill(dilated_mask_img_inv, np.zeros((h+2, w+2), dtype=np.uint8), (coor_w, coor_h), 255)
+
+        bbox = get_changes_bbox(np.where(prev_img != dilated_mask_img_inv, 1, 0).astype(np.uint8))
+        if bbox is not None:
+            bboxes.append(bbox)
+        prev_img = dilated_mask_img_inv.copy()
+
+    return bboxes if len(bboxes)>0 else None
+
 
 def Email():
     base_url = "https://waste-api-mnzypva.alphaaitech.com"
@@ -310,10 +335,11 @@ def Analyse():
                         if (mask is not None):
                             himg, _ = last_human_image
 
-                            xyxy = get_changes_bbox(mask)
-                            if xyxy is not None: # if we don't find a minimum bbox then assume negative results and do nothing
-                                (x1,y1), (x2,y2) = xyxy
-                                cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
+                            bboxes = find_all_bboxes(mask[:,:,0])
+                            if bboxes is not None: # if we don't find a minimum bbox then assume negative results and do nothing
+                                for bbox in bboxes:
+                                    (x1,y1), (x2,y2) = bbox
+                                    cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
 
 
                                 for_saving.put(
@@ -326,8 +352,8 @@ def Analyse():
                                                     himg, # last human image
                                                     img_list_bh[-1], # immediatly after human left,
                                                     mask*255,
-                                                    (human_path_mask*125) + (mask*100),
-                                                    (hardcoded_mask*125) + (mask*100),
+                                                    # (human_path_mask*125) + (mask*100),
+                                                    # (hardcoded_mask*125) + (mask*100),
                                                     
                                                 ))
                                                 

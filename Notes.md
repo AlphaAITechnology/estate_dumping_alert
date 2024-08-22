@@ -1,10 +1,7 @@
-[] Attempting to fix the umbrella issue
-    [] Umbrella which is really close to left of frame gets blacked down all the way to the bottom
-        [] For some reason -- umbrella is not being detetcted by yolov5s  
-        Since it's too impractical to reduce confidence, I'm exploring the idea if we could increase the yolo pt size
+* Implement Changes so that small bboxes near upper right get nulled
+* Implement DBSCAN for BBoxes
 
 
-[x] Solve Animals
-[x] Longer Container
-[] Shadows issue
-[x] Longer Time Frame
+* Inflate pixels using low blur
+* Flood fill mask to get pixels that merge
+    * Iterate until no positive pixel left
