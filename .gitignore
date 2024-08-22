@@ -10,8 +10,7 @@ test.py
 aid.py
 yolov5m6.pt
 
-
-
+!background_screens/*
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,windows,macos,python,pycharm,intellij,visualstudiocode,vim,emacs
