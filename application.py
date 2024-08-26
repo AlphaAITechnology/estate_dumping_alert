@@ -345,10 +345,6 @@ def Analyse():
                                         bboxes_.append(((x1,y1), (x2,y2)))
 
 
-                                    # if not ((np.abs(x1 - mask.shape[1])<200) and (np.sqrt(np.square(x1-x2) + np.square(y1-y2)) < 200)):
-                                    #     bboxes_.append(((x1,y1), (x2,y2)))
-
-
                             if len(bboxes_) > 0: # if we don't find a minimum bbox then assume negative results and do nothing
                                 for bbox in bboxes_:
                                     (x1,y1), (x2,y2) = bbox
