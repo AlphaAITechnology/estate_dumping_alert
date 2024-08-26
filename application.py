@@ -411,8 +411,8 @@ def Analyse():
     elegant_shutdown.put(True)
 
 def Receive():
-    rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
-    # rtsp_url = "rtsp://admin:12345678a@180.188.143.227:580"
+    # rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
+    rtsp_url = "rtsp://admin:12345678a@180.188.143.227:580"
     cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
     count = 1
 
