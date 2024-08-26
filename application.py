@@ -327,7 +327,7 @@ def Analyse():
                         if prev_bkg is not None: # Even 1 background claimining false positive is enough to trigger cleanup
                             res_mask = mask.copy()
                             for prev_bkg_ in prev_bkg:
-                                alt_mask = get_diff([prev_bkg_ * mask, img_list_bh[-1] * mask], human_path_mask) if mask is not None else None
+                                alt_mask = get_diff([prev_bkg_, img_list_bh[-1]], mask) if mask is not None else None
                                 res_mask *= alt_mask
                             mask = res_mask
 
