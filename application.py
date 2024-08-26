@@ -349,7 +349,7 @@ def Analyse():
                             if len(bboxes_) > 0: # if we don't find a minimum bbox then assume negative results and do nothing
 
                                 # Keep last 5 backgrounds
-                                prev_bkg = [img_list_bh[-2], img_list_bh[-1]] if prev_bkg is None else prev_bkg.extend([img_list_bh[-2], img_list_bh[-1]])
+                                prev_bkg = [img_list_bh[-2], img_list_bh[-1]] if prev_bkg is None else prev_bkg + [img_list_bh[-2], img_list_bh[-1]]
                                 if len(prev_bkg)>10: 
                                     prev_bkg.pop(0)
                                     prev_bkg.pop(0)
