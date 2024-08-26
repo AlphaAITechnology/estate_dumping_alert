@@ -272,8 +272,6 @@ def Analyse():
 
 
     last_human_image = None # stores image holding photo of humans
-
-
     while (elegant_shutdown.empty() or (not elegant_shutdown.get())):
         if not q.empty():
 
@@ -325,14 +323,17 @@ def Analyse():
                         img_list_bh.append(img)
                         mask = get_diff(img_list_bh, human_path_mask)
 
-                        # After getting mask of changes -- subtract the standard background to remove false positives
-                        if prev_bkg is not None:
-                            alt_mask = get_diff([prev_bkg * mask, img_list_bh[-1] * mask], human_path_mask) if mask is not None else None
-                            mask = alt_mask
+                        # After getting mask of changes -- subtract the previous background to remove false positives
+                        if prev_bkg is not None: # Even 1 background claimining false positive is enough to trigger cleanup
+                            res_mask = mask.copy()
+                            for prev_bkg_ in prev_bkg:
+                                alt_mask = get_diff([prev_bkg_ * mask, img_list_bh[-1] * mask], human_path_mask) if mask is not None else None
+                                res_mask *= alt_mask
+                            mask = res_mask
 
 
                         if (mask is not None):
-                            himg, _ = last_human_image
+                            _, (_, _, himg) = last_human_image
 
                             bboxes = find_all_bboxes(mask[:,:,0])
                             bboxes_ = []
@@ -346,11 +347,19 @@ def Analyse():
 
 
                             if len(bboxes_) > 0: # if we don't find a minimum bbox then assume negative results and do nothing
+
+                                # Keep last 5 backgrounds
+                                prev_bkg = [img_list_bh[-2], img_list_bh[-1]] if prev_bkg is None else prev_bkg.extend([img_list_bh[-2], img_list_bh[-1]])
+                                if len(prev_bkg)>10: 
+                                    prev_bkg.pop(0)
+                                    prev_bkg.pop(0)
+
+
                                 for bbox in bboxes_:
                                     (x1,y1), (x2,y2) = bbox
                                     cv.rectangle(img_list_bh[-1], (x1,y1), (x2,y2), (255,0,0), 3)
 
-                                prev_bkg = img_list_bh[-2]
+
 
                                 for_saving.put(
                                     (
@@ -391,14 +400,14 @@ def Analyse():
                     cv.rectangle(h_img, (x1,y1), (x2,y2), (0,255,0), 5)
                 
                 if last_human_image is None:
-                    last_human_image = (h_img, (human_num, human_size))
+                    last_human_image = (h_img, (human_num, human_size, img))
                 else:
-                    _, (hn_, hs_) = last_human_image
+                    _, (hn_, hs_, _) = last_human_image
                     if hn_ < human_num:
-                        last_human_image = (h_img, (human_num, human_size))
+                        last_human_image = (h_img, (human_num, human_size, img))
                     elif hn_ == human_num:
                         if hs_ <= human_size:
-                            last_human_image = (h_img, (human_num, human_size))
+                            last_human_image = (h_img, (human_num, human_size, img))
 
 
                 seen_flg = True
