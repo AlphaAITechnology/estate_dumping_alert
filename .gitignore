@@ -11,6 +11,9 @@ aid.py
 yolov5m6.pt
 
 !background_screens/*
+!test_base_a.png
+!test_base_b.png
+!test_base_c.png
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,windows,macos,python,pycharm,intellij,visualstudiocode,vim,emacs
