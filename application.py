@@ -252,11 +252,11 @@ def Analyse():
 
 
     # hard coded a mask to remove streets
-    with gzip.open("street_container_mask.csv.gz", 'rt') as file:
+    with gzip.open("street_container_mask_581.csv.gz", 'rt') as file:
         hc_mask = np.loadtxt(file).astype(np.uint8)
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
 
-    with gzip.open("street_backdrop_mask.csv.gz", 'rt') as sm_file:
+    with gzip.open("street_backdrop_mask_580.csv.gz", 'rt') as sm_file:
         lhc_mask = np.loadtxt(sm_file, delimiter=',').astype(np.uint8)
         less_hardcoded_mask = np.stack((lhc_mask, lhc_mask, lhc_mask), axis=2)
     
