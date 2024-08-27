@@ -268,7 +268,7 @@ def Analyse():
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
 
     with gzip.open("street_backdrop_mask_581.csv.gz", 'rt') as sm_file:
-        lhc_mask = np.loadtxt(sm_file, delimiter=',').astype(np.uint8)
+        lhc_mask = np.loadtxt(sm_file).astype(np.uint8)
         less_hardcoded_mask = np.stack((lhc_mask, lhc_mask, lhc_mask), axis=2)
     
 
