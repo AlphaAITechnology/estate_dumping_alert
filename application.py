@@ -247,11 +247,13 @@ def SaveToDisk():
 def Analyse():
 
     # Background Screens to Remove Subtraction false positives
-    # bkg_1 = cv.imread("./background_screens/screen_capture_2024-08-21T10:47:33.888537.png")
     prev_bkg = None
 
 
-    # hard coded a mask to remove streets
+
+
+
+    # hard coded a mask to remove streets -- camera 580
     with gzip.open("street_container_mask_580.csv.gz", 'rt') as file:
         hc_mask = np.loadtxt(file).astype(np.uint8)
         hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
@@ -259,6 +261,15 @@ def Analyse():
     with gzip.open("street_backdrop_mask_580.csv.gz", 'rt') as sm_file:
         lhc_mask = np.loadtxt(sm_file, delimiter=',').astype(np.uint8)
         less_hardcoded_mask = np.stack((lhc_mask, lhc_mask, lhc_mask), axis=2)
+
+    # # hard coded a mask to remove streets -- camera 581
+    # with gzip.open("street_container_mask_581.csv.gz", 'rt') as file:
+    #     hc_mask = np.loadtxt(file).astype(np.uint8)
+    #     hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
+
+    # with gzip.open("street_backdrop_mask_581.csv.gz", 'rt') as sm_file:
+    #     lhc_mask = np.loadtxt(sm_file, delimiter=',').astype(np.uint8)
+    #     less_hardcoded_mask = np.stack((lhc_mask, lhc_mask, lhc_mask), axis=2)
     
 
     max_queue_threshold = 20
