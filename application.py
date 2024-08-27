@@ -253,23 +253,23 @@ def Analyse():
 
 
 
-    # hard coded a mask to remove streets -- camera 580
-    with gzip.open("street_container_mask_580.csv.gz", 'rt') as file:
-        hc_mask = np.loadtxt(file).astype(np.uint8)
-        hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
-
-    with gzip.open("street_backdrop_mask_580.csv.gz", 'rt') as sm_file:
-        lhc_mask = np.loadtxt(sm_file, delimiter=',').astype(np.uint8)
-        less_hardcoded_mask = np.stack((lhc_mask, lhc_mask, lhc_mask), axis=2)
-
-    # # hard coded a mask to remove streets -- camera 581
-    # with gzip.open("street_container_mask_581.csv.gz", 'rt') as file:
+    # # hard coded a mask to remove streets -- camera 580
+    # with gzip.open("street_container_mask_580.csv.gz", 'rt') as file:
     #     hc_mask = np.loadtxt(file).astype(np.uint8)
     #     hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
 
-    # with gzip.open("street_backdrop_mask_581.csv.gz", 'rt') as sm_file:
+    # with gzip.open("street_backdrop_mask_580.csv.gz", 'rt') as sm_file:
     #     lhc_mask = np.loadtxt(sm_file, delimiter=',').astype(np.uint8)
     #     less_hardcoded_mask = np.stack((lhc_mask, lhc_mask, lhc_mask), axis=2)
+
+    # hard coded a mask to remove streets -- camera 581
+    with gzip.open("street_container_mask_581.csv.gz", 'rt') as file:
+        hc_mask = np.loadtxt(file).astype(np.uint8)
+        hardcoded_mask = np.stack((hc_mask, hc_mask, hc_mask), axis=2)
+
+    with gzip.open("street_backdrop_mask_581.csv.gz", 'rt') as sm_file:
+        lhc_mask = np.loadtxt(sm_file, delimiter=',').astype(np.uint8)
+        less_hardcoded_mask = np.stack((lhc_mask, lhc_mask, lhc_mask), axis=2)
     
 
     max_queue_threshold = 20
@@ -438,8 +438,8 @@ def Analyse():
     elegant_shutdown.put(True)
 
 def Receive():
-    # rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
-    rtsp_url = "rtsp://admin:12345678a@180.188.143.227:580"
+    rtsp_url = "rtsp://admin:hik12345@180.188.143.227:581"
+    # rtsp_url = "rtsp://admin:12345678a@180.188.143.227:580"
     cap = cv.VideoCapture(rtsp_url, cv.CAP_FFMPEG)
     count = 1
 
