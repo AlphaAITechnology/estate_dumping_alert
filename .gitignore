@@ -1,6 +1,7 @@
 # good_results/*
 # saved_images/*
 tmp/*
+tmp_/*
 *.webp
 *.png
 *.mkv
