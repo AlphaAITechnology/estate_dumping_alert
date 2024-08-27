@@ -11,7 +11,7 @@ import json
 import gzip
 
 
-
+# cut edges at gaussian
 def get_diff(img_list, human_path_mask = None, threshold=None):
         if not (len(img_list) > 1):
                 return None
@@ -268,7 +268,7 @@ def Analyse():
     seen_flg = False
     frames_since_last_spotted = 0
     frames_since_last_spotted_threshold = 30
-    minimum_human_confidence_trigger = 0.5
+    minimum_human_confidence_trigger = 0.6
 
 
     last_human_image = None # stores image holding photo of humans
@@ -323,30 +323,34 @@ def Analyse():
                         img_list_bh.append(img)
                         mask = get_diff(img_list_bh, human_path_mask)
 
-                        # After getting mask of changes -- subtract the previous background to remove false positives
-                        if ((mask is not None) and (prev_bkg is not None)): # Even 1 background claimining false positive is enough to trigger cleanup
-                            res_mask = mask.copy()
-                            for prev_bkg_ in prev_bkg:
-                                alt_mask = get_diff([prev_bkg_, img_list_bh[-1]], mask) if mask is not None else None
-                                res_mask *= alt_mask
-                            mask = res_mask
-
 
                         if (mask is not None):
-                            _, (_, _, himg) = last_human_image
+                            # After getting mask of changes -- subtract the previous background to remove false positives
+                            if (prev_bkg is not None): # Even 1 background claimining false positive is enough to trigger cleanup
+                                res_mask = mask.copy()
+                                for prev_bkg_ in prev_bkg:
+                                    alt_mask = get_diff([prev_bkg_, img_list_bh[-1]], mask) if mask is not None else None
+                                    res_mask *= alt_mask
+                                mask = res_mask
+
+                            
 
                             bboxes = find_all_bboxes(mask[:,:,0])
                             bboxes_ = []
                             if bboxes is not None:
                                 for ((x1,y1), (x2,y2)) in bboxes:
                                     if (np.sqrt(np.square(x1-x2) + np.square(y1-y2)) < 200):
-                                        if not((np.abs(x1 - mask.shape[1])<200) or (np.abs(y1 - mask.shape[0])<200)):
+                                        if not(((np.abs(x1 - mask.shape[1])<200) or (np.abs(y1 - mask.shape[0])<200)) or 
+                                               ((np.abs(x2 - 0)<200) or (np.abs(y2 - 0)<200))):
                                             bboxes_.append(((x1,y1), (x2,y2)))
                                     else:
                                         bboxes_.append(((x1,y1), (x2,y2)))
 
 
                             if len(bboxes_) > 0: # if we don't find a minimum bbox then assume negative results and do nothing
+
+                                _, (_, _, himg) = last_human_image
+                                # himg, (_, _, himg_) = last_human_image
 
                                 # Keep last 5 backgrounds
                                 prev_bkg = [img_list_bh[-2], img_list_bh[-1]] if prev_bkg is None else prev_bkg + [img_list_bh[-2], img_list_bh[-1]]
