@@ -46,7 +46,8 @@ def get_diff(img_list, human_path_mask = None, threshold=None):
 
 
         # threshold = (threshold if threshold is not None else np.square(2.3))
-        threshold = (threshold if threshold is not None else np.square(3))
+        threshold = (threshold if threshold is not None else np.square(2.8))
+
         m_ = np.where(
             (np.where(two_stack_mask[:,:,0] > threshold, 1, 0) + np.where(two_stack_mask[:,:,1] > threshold, 1, 0)) > 0, 1, 0
         ).astype(np.uint8)
