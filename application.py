@@ -281,7 +281,7 @@ def Analyse():
     seen_flg = False
     frames_since_last_spotted = 0
     frames_since_last_spotted_threshold = 30
-    minimum_human_confidence_trigger = 0.6
+    minimum_human_confidence_trigger = 0.4
 
 
     last_human_image = None # stores image holding photo of humans
