@@ -95,19 +95,21 @@ def Image_Saving(saving_images_q, sending_images_q, shutdown):
         time.sleep(1) # might have to adjust
 
 
-def build_human_path_mask(bbox_lists=[]):
+def build_human_path_mask(bbox_lists=[], empty_mask=None):
 
-    if len(bbox_lists)>0:
+    if (len(bbox_lists)>0) and (empty_mask is not None):
         res = []
         for bboxs in bbox_lists:
-            for x1, y1, x2, y2 in bboxs.tolist():
-                res.append((x1,y1))
-                res.append((x1,y2))
-                res.append((x2,y2))
-                res.append((x2,y1))
-        return res
-    else:
-        return None
+            for bbox in bboxs:
+                for x1, y1, x2, y2 in bbox.tolist():
+                    res.append((x1,y1))
+                    res.append((x1,y2))
+                    res.append((x2,y2))
+                    res.append((x2,y1))
+        
+        hull = cv.convexHull(np.array(res, dtype=np.int16).reshape((-1,2)), )
+        cv.fillConvexPoly(empty_mask, hull, (255, 255, 255))
+
 
 
 
@@ -146,9 +148,11 @@ def Image_Analysis(collected_images_q, saving_images_q, mask, model, shutdown):
                         fg_mask = np.where(fg_mask>0, np.ones_like(fg_mask), np.zeros_like(fg_mask))*255
 
                         # Get & Apply human path mask
-                        human_path_mask = build_human_path_mask([r for _, r in human_images_collection]) # build mask using model results
+                        human_path_mask = np.zeros_like(img)
+                        build_human_path_mask([r for _, r in human_images_collection], human_path_mask) # build mask using model results
 
                         print(human_path_mask)
+                        
                         fg_mask = fg_mask * mask[:,:,0] # Masking Foreground
                         fg_mask = cv.morphologyEx(fg_mask, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_CROSS, (3,3)), iterations=3)
                         fg_mask_ = np.stack((fg_mask, fg_mask, fg_mask), axis=2)
