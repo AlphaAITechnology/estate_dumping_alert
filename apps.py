@@ -110,12 +110,10 @@ def build_human_path_mask(bbox_lists=[], empty_mask=None):
         
         hull = cv.convexHull(np.array(res), returnPoints=True).reshape((-1,2))
         cv.fillPoly(empty_mask, pts=[hull], color=(255, 255, 255))
-        empty_mask = np.uint8(np.where(empty_mask[:,:,0]==255, 1, 0))
-        print(res)
+        empty_mask = np.uint8(np.where(empty_mask==255, 1, 0))
+        
 
-
-
-def Image_Analysis(collected_images_q, saving_images_q, mask, model, shutdown):
+def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, shutdown):
 
     bg_subtractor = cv.createBackgroundSubtractorMOG2(varThreshold=50)
     
@@ -132,7 +130,7 @@ def Image_Analysis(collected_images_q, saving_images_q, mask, model, shutdown):
             dtm_, img = collected_images_q.get()
             
             
-            results = model(img, stream=True, conf=minimum_confidence, classes=[0], device='cuda:1', verbose=False) # looking for people (class 0)
+            results = model(img*roi_mask, stream=True, conf=minimum_confidence, classes=[0], device='cuda:1', verbose=False) # looking for people (class 0)
             results = [np.floor(result.boxes.xyxy.cpu().numpy()).astype(np.int16) for result in results] # bring to xyxy numpy
 
             if sum([r.shape[0] for r in results]) > 0:
@@ -153,9 +151,10 @@ def Image_Analysis(collected_images_q, saving_images_q, mask, model, shutdown):
                         human_path_mask = np.zeros_like(img)
                         build_human_path_mask([r for _, r in human_images_collection], human_path_mask) # build mask using model results
 
-                        print(human_path_mask)
                         
                         fg_mask = fg_mask * mask[:,:,0] # Masking Foreground
+                        fg_mask = fg_mask * human_path_mask[:,:,0] # Masking Humans
+
                         fg_mask = cv.morphologyEx(fg_mask, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_CROSS, (3,3)), iterations=3)
                         fg_mask_ = np.stack((fg_mask, fg_mask, fg_mask), axis=2)
 
@@ -206,11 +205,11 @@ def Image_Reader(video_link, collected_images_q, shutdown):
         
 
 
-def get_mask(api_details, camera_choice="Camera_1"):
+def get_mask(api_details, camera_choice="Camera_1", ulimit=0, elimit=None):
     mask_file_paths = api_details[camera_choice]["mask_file_paths"]
 
     hc_mask = None
-    for fpath in mask_file_paths:
+    for fpath in (mask_file_paths if elimit is None else mask_file_paths[ulimit:elimit]):
         with gz.open(fpath, 'rt') as file:
             if hc_mask is None:
                 hc_mask = np.loadtxt(file).astype(np.uint8)
@@ -252,6 +251,7 @@ def main():
     #! Declare choice:
     camera_choice = "Camera_1"
     mask = get_mask(camera_api_details, camera_choice)
+    region_to_view_mask = get_mask(camera_api_details, camera_choice, ulimit=1, elimit=2) # completely arbritrary; please change as needed
         
     shutdown = False
     collected_images = queue.Queue()
@@ -259,7 +259,7 @@ def main():
     sending_images = queue.Queue()
 
     p1 = threading.Thread(target=Image_Reader, args=(camera_api_details[camera_choice]["video_link"], collected_images, shutdown))
-    p2 = threading.Thread(target=Image_Analysis, args=(collected_images, saving_images, mask, model, shutdown))
+    p2 = threading.Thread(target=Image_Analysis, args=(collected_images, saving_images, region_to_view_mask, mask, model, shutdown))
     # p3 = threading.Thread(target=Image_Saving, args=(saving_images, sending_images, shutdown))
     # p4 = threading.Thread(target=Image_Sending, args=(sending_images, server_api_details, shutdown))
 
