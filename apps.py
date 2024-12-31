@@ -101,11 +101,11 @@ def build_human_path_mask(bbox_lists=[], empty_mask=None):
         res = []
         for bboxs in bbox_lists:
             for bbox in bboxs:
-                for x1, y1, x2, y2 in [int(i) for i in bbox.tolist()]:
-                    res.append((x1,y1))
-                    res.append((x1,y2))
-                    res.append((x2,y2))
-                    res.append((x2,y1))
+                for x1, y1, x2, y2 in bbox.tolist():
+                    res.append((int(x1),int(y1)))
+                    res.append((int(x1),int(y2)))
+                    res.append((int(x2),int(y2)))
+                    res.append((int(x2),int(y1)))
         
         
         hull = cv.convexHull(np.array(res), returnPoints=True).reshape((-1,2))
