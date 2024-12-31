@@ -101,15 +101,16 @@ def build_human_path_mask(bbox_lists=[], empty_mask=None):
         res = []
         for bboxs in bbox_lists:
             for bbox in bboxs:
-                for x1, y1, x2, y2 in bbox.tolist():
+                for x1, y1, x2, y2 in [int(i) for i in bbox.tolist()]:
                     res.append((x1,y1))
                     res.append((x1,y2))
                     res.append((x2,y2))
                     res.append((x2,y1))
         
         
-        hull = cv.convexHull(np.array(res, dtype=np.float32).reshape((-1,2)), )
-        cv.fillConvexPoly(empty_mask, hull, (255, 255, 255))
+        hull = cv.convexHull(np.array(res), returnPoints=True).reshape((-1,2))
+        cv.fillConvexPoly(empty_mask, pts=[hull], color=(255, 255, 255))
+        empty_mask = np.uint8(np.where(empty_mask[:,:,0]==255, 1, 0))
         print(res)
 
 
