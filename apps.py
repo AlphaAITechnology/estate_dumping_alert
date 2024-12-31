@@ -109,7 +109,7 @@ def build_human_path_mask(bbox_lists=[], empty_mask=None):
         
         
         hull = cv.convexHull(np.array(res), returnPoints=True).reshape((-1,2))
-        cv.fillConvexPoly(empty_mask, pts=[hull], color=(255, 255, 255))
+        cv.fillPoly(empty_mask, pts=[hull], color=(255, 255, 255))
         empty_mask = np.uint8(np.where(empty_mask[:,:,0]==255, 1, 0))
         print(res)
 
