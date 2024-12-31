@@ -95,22 +95,77 @@ def Image_Saving(saving_images_q, sending_images_q, shutdown):
         time.sleep(1) # might have to adjust
 
 
+def build_human_path_mask(bbox_lists=[]):
+
+    if len(bbox_lists)>0:
+        res = []
+        for bboxs in bbox_lists:
+            for x1, y1, x2, y2 in bboxs.tolist():
+                res.append((x1,y1))
+                res.append((x1,y2))
+                res.append((x2,y2))
+                res.append((x2,y1))
+        return res
+    else:
+        return None
+
+
+
 def Image_Analysis(collected_images_q, saving_images_q, mask, model, shutdown):
+
+    bg_subtractor = cv.createBackgroundSubtractorMOG2(varThreshold=50)
     
     minimum_confidence = 0.45
     human_seen_flag = False
-    images_collection = []
+    human_gone_window = 0
+    human_gone_tolerance = 25
 
-    
+    scene_images_collection = []
+    human_images_collection = []
+
     while (not shutdown):
         if (not collected_images_q.empty()):
             dtm_, img = collected_images_q.get()
             
-            # Apply AI model; set at cuda 1
+            
             results = model(img, stream=True, conf=minimum_confidence, classes=[0], device='cuda:1', verbose=False) # looking for people (class 0)
             results = [np.floor(result.boxes.xyxy.cpu().numpy()).astype(np.int16) for result in results] # bring to xyxy numpy
 
-            print(results)
+            if sum([r.shape[0] for r in results]) > 0:
+                human_seen_flag = True
+                human_images_collection.append((img[:,:,:], results))
+                
+            else:
+                if human_seen_flag:
+                    human_gone_window += 1
+                    if human_gone_window > human_gone_tolerance:
+                        human_seen_flag = False
+                        human_gone_window = 0
+                        
+                        fg_mask = bg_subtractor.apply(img[:,:,:]) # mask after differences were found
+                        fg_mask = np.where(fg_mask>0, np.ones_like(fg_mask), np.zeros_like(fg_mask))*255
+
+                        # Get & Apply human path mask
+                        human_path_mask = build_human_path_mask([r for _, r in human_images_collection]) # build mask using model results
+
+                        print(human_path_mask)
+                        fg_mask = fg_mask * mask[:,:,0] # Masking Foreground
+                        fg_mask = cv.morphologyEx(fg_mask, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_CROSS, (3,3)), iterations=3)
+                        fg_mask_ = np.stack((fg_mask, fg_mask, fg_mask), axis=2)
+
+
+                        # analyse results
+                        # get best human picture
+                        # send for saving
+                        human_images_collection[:] = [] # empty human collection
+                else:
+                    _ = bg_subtractor.apply(img[:,:,:])
+                    
+            
+            del dtm_
+            del img
+                
+                
 
 
 
