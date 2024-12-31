@@ -158,6 +158,7 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
                         fg_mask = cv.morphologyEx(fg_mask, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_CROSS, (3,3)), iterations=3)
                         fg_mask_ = np.stack((fg_mask, fg_mask, fg_mask), axis=2)
 
+                        cv.imwrite(f"./tmp/{dtm_}.png", np.hstack((fg_mask_*255, img)))
 
                         # analyse results
                         # get best human picture
