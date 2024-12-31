@@ -108,7 +108,7 @@ def Image_Analysis(collected_images_q, saving_images_q, mask, model, shutdown):
             
             # Apply AI model; set at cuda 1
             results = model(img, stream=True, conf=minimum_confidence, classes=[0], device='cuda:1', verbose=False) # looking for people (class 0)
-            results = [np.floor(result.boxes.xyxy.cpu().numpy()) for result in results] # bring to xyxy numpy
+            results = [np.floor(result.boxes.xyxy.cpu().numpy()).astype(np.int16) for result in results] # bring to xyxy numpy
 
             print(results)
 
