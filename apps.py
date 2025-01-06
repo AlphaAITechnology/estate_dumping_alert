@@ -163,7 +163,7 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
                         cv.imwrite(f"./tmp/raw_{dtm_}.png", fg_mask)
 
                         fg_mask = fg_mask * mask[:,:,0] # Masking Foreground
-                        # fg_mask = fg_mask * human_path_mask[:,:,0] # Masking Humans
+                        fg_mask = fg_mask * human_path_mask[:,:,0] # Masking Humans
 
                         print("Diag: Writing HIDDEN mask")
                         cv.imwrite(f"./tmp/hm_{dtm_}.png", np.hstack((mask[..., 0], human_path_mask[..., 0])).astype(np.uint8)*255)
@@ -175,7 +175,7 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
                         fg_mask_ = np.stack((fg_mask, fg_mask, fg_mask), axis=2)
 
                         print("Diag: Writing mask")
-                        cv.imwrite(f"./tmp/{dtm_}.png", np.hstack((fg_mask_, img)))
+                        cv.imwrite(f"./tmp/blessoff_{dtm_}.png", np.hstack((fg_mask_, img)))
 
 
                         # analyse results
