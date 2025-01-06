@@ -129,24 +129,30 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
         if (not collected_images_q.empty()):
             dtm_, img = collected_images_q.get()
             
-            
+            print("Diag: Read Image")
+
             results = model(img*roi_mask, stream=True, conf=minimum_confidence, classes=[0], device='cuda:1', verbose=False) # looking for people (class 0)
             results = [np.floor(result.boxes.xyxy.cpu().numpy()).astype(np.int16) for result in results] # bring to xyxy numpy
 
+
             if sum([r.shape[0] for r in results]) > 0:
+                print("Diag: Human Found")
                 human_seen_flag = True
                 human_images_collection.append((img[:,:,:], results))
                 
             else:
                 if human_seen_flag:
+                    print("Diag: Human not seen, but tolerance window live")
                     human_gone_window += 1
                     if human_gone_window > human_gone_tolerance:
                         human_seen_flag = False
                         human_gone_window = 0
                         
+                        print("Diag: Fed to BG; tolerance window just ended")
                         fg_mask = bg_subtractor.apply(img[:,:,:]) # mask after differences were found
                         fg_mask = np.where(fg_mask>0, np.ones_like(fg_mask), np.zeros_like(fg_mask))*255
 
+                        print("Diag: Mask extracted")
                         # Get & Apply human path mask
                         human_path_mask = np.zeros_like(img)
                         build_human_path_mask([r for _, r in human_images_collection], human_path_mask) # build mask using model results
@@ -158,13 +164,17 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
                         fg_mask = cv.morphologyEx(fg_mask, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_CROSS, (3,3)), iterations=3)
                         fg_mask_ = np.stack((fg_mask, fg_mask, fg_mask), axis=2)
 
+                        print("Diag: Writing mask")
                         cv.imwrite(f"./tmp/{dtm_}.png", np.hstack((fg_mask_, img)))
+
 
                         # analyse results
                         # get best human picture
                         # send for saving
                         human_images_collection[:] = [] # empty human collection
                 else:
+                    print("Diag: Human not seen, but tolerance window dead")
+                    print("Diag: Fed to BG")
                     _ = bg_subtractor.apply(img[:,:,:])
                     
             
