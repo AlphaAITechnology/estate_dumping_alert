@@ -95,9 +95,9 @@ def Image_Saving(saving_images_q, sending_images_q, shutdown):
         time.sleep(1) # might have to adjust
 
 
-def build_human_path_mask(bbox_lists=[], empty_mask=None):
+def build_human_path_mask(bbox_lists=[], mask=None):
 
-    if (len(bbox_lists)>0) and (empty_mask is not None):
+    if (len(bbox_lists)>0) and (mask is not None):
         res = []
         for bboxs in bbox_lists:
             for bbox in bboxs:
@@ -109,8 +109,8 @@ def build_human_path_mask(bbox_lists=[], empty_mask=None):
         
         
         hull = cv.convexHull(np.array(res), returnPoints=True).reshape((-1,2))
-        cv.fillPoly(empty_mask, pts=[hull], color=(255, 255, 255))
-        empty_mask = np.uint8(np.where(empty_mask==255, 1, 0))
+        mask = cv.fillPoly(mask, pts=[hull], color=(255, 255, 255))
+    return np.where(mask==255, 1, 0).astype(np.uint8)
         
 
 def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, shutdown):
@@ -154,8 +154,8 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
 
                         print("Diag: Mask extracted")
                         # Get & Apply human path mask
-                        human_path_mask = np.zeros_like(img)
-                        build_human_path_mask([r for _, r in human_images_collection], human_path_mask) # build mask using model results
+                        print(f"Diag: values of huamn path", [r for _, r in human_images_collection])
+                        human_path_mask = build_human_path_mask([r for _, r in human_images_collection], np.zeros_like(img)) # build mask using model results
 
                         print("Diag: Writing RAW mask")
                         cv.imwrite(f"./tmp/raw_{dtm_}.png", fg_mask)
