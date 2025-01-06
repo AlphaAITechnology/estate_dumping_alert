@@ -157,7 +157,9 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
                         human_path_mask = np.zeros_like(img)
                         build_human_path_mask([r for _, r in human_images_collection], human_path_mask) # build mask using model results
 
-                        
+                        print("Diag: Writing RAW mask")
+                        cv.imwrite(f"./tmp/raw_{dtm_}.png", np.hstack((fg_mask_, img)))
+
                         fg_mask = fg_mask * mask[:,:,0] # Masking Foreground
                         fg_mask = fg_mask * human_path_mask[:,:,0] # Masking Humans
 
