@@ -150,7 +150,7 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
                         
                         print(f"{dtm_} Diag: Fed to BG; tolerance window just ended")
                         fg_mask = bg_subtractor.apply(img[:,:,:]) # mask after differences were found
-                        fg_mask = np.where(fg_mask>0, np.ones_like(fg_mask), np.zeros_like(fg_mask))*255
+                        fg_mask = (np.where(fg_mask>0, np.ones_like(fg_mask), np.zeros_like(fg_mask))*255).astype(np.uint8)
 
                         print("Diag: Mask extracted")
                         # Get & Apply human path mask
@@ -158,10 +158,13 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
                         build_human_path_mask([r for _, r in human_images_collection], human_path_mask) # build mask using model results
 
                         print("Diag: Writing RAW mask")
-                        cv.imwrite(f"./tmp/raw_{dtm_}.png", np.hstack((fg_mask_, img)))
+                        cv.imwrite(f"./tmp/raw_{dtm_}.png", fg_mask)
 
                         fg_mask = fg_mask * mask[:,:,0] # Masking Foreground
                         fg_mask = fg_mask * human_path_mask[:,:,0] # Masking Humans
+
+                        print("Diag: Writing HIDDEN mask")
+                        cv.imwrite(f"./tmp/hmappl_{dtm_}.png", fg_mask)
 
                         fg_mask = cv.morphologyEx(fg_mask, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_CROSS, (3,3)), iterations=3)
                         fg_mask_ = np.stack((fg_mask, fg_mask, fg_mask), axis=2)
