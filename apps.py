@@ -148,7 +148,7 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
                         human_seen_flag = False
                         human_gone_window = 0
                         
-                        print("Diag: Fed to BG; tolerance window just ended")
+                        print(f"{dtm_} Diag: Fed to BG; tolerance window just ended")
                         fg_mask = bg_subtractor.apply(img[:,:,:]) # mask after differences were found
                         fg_mask = np.where(fg_mask>0, np.ones_like(fg_mask), np.zeros_like(fg_mask))*255
 
@@ -174,7 +174,7 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
                         human_images_collection[:] = [] # empty human collection
                 else:
                     print("Diag: Human not seen, but tolerance window dead")
-                    print("Diag: Fed to BG")
+                    print(f"{dtm_} Diag: Fed to BG")
                     _ = bg_subtractor.apply(img[:,:,:])
                     
             
