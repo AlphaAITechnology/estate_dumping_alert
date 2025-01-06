@@ -164,6 +164,9 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
                         fg_mask = fg_mask * human_path_mask[:,:,0] # Masking Humans
 
                         print("Diag: Writing HIDDEN mask")
+                        cv.imwrite(f"./tmp/hm_{dtm_}.png", np.stack((mask[..., 0], human_path_mask[..., 0]).astype(np.uint8)*255))
+
+                        print("Diag: Writing HIDDEN mask")
                         cv.imwrite(f"./tmp/hmappl_{dtm_}.png", fg_mask)
 
                         fg_mask = cv.morphologyEx(fg_mask, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_CROSS, (3,3)), iterations=3)
