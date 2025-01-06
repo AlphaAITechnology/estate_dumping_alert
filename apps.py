@@ -108,11 +108,11 @@ def build_human_path_mask(bbox_lists=[], mask=None):
                     res.append((int(x2),int(y1)))
         
         
-        print("Human Points be linked\n", np.array(res))
+        # print("Human Points be linked\n", np.array(res))
 
-        hull = cv.convexHull(np.array(res), returnPoints=True).reshape((-1,2))
-        mask = cv.fillPoly(mask, pts=[hull], color=(255, 255, 255))
-    return np.where(mask==255, 1, 0).astype(np.uint8)
+        hull = cv.convexHull(np.array(res).reshape((-1,2)), returnPoints=True).reshape((-1,2))
+        mask = cv.fillPoly(mask, pts=[hull.reshape((-1,2))], color=(255, 255, 255))
+    return np.where(mask>0, 1, 0).astype(np.uint8)
         
 
 def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, shutdown):
