@@ -94,7 +94,7 @@ def Image_Saving(saving_images_q, sending_images_q, shutdown):
             del dtm_ # hotfix to cure memory leak issue
             del img  # hotfix to cure memory leak issue
             del himg  # hotfix to cure memory leak issue
-        time.sleep(1) # might have to adjust
+        # time.sleep(1) # might have to adjust
 
 
 def build_human_path_mask(bbox_lists=[], mask=None):
@@ -172,7 +172,7 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
 
                             for idx, (_, hres) in enumerate(human_images_collection): # get best human picture
                                 m_ = max([max([abs((y2-y1)*(x2-x1)) for x1, y1, x2, y2 in bbox.tolist()]) for bbox in hres])
-                                m, midx = m_, idx if m_ > m else m, midx
+                                m, midx = (m_, idx) if m_ > m else (m, midx)
                             
                             print(f"Diag: Best index {midx}; for {m}")
                             saving_images_q.put( # send for saving
@@ -187,7 +187,7 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
             del dtm_
             del img
                 
-        time.sleep(1)                
+        # time.sleep(1)                
 
 
 
