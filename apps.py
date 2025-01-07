@@ -203,12 +203,12 @@ def Image_Reader(video_link, collected_images_q, shutdown):
             grab_failure_tolerance = 15
             grab_failure_counter = 0
             while(cap.isOpened()):
-                print(f"Diag: Read Image")
                 ret = cap.grab()
                 if (ret and collected_images_q.empty()):
                     ret, frame = cap.retrieve()
                     if ret:
                         dtm_ = datetime.datetime.now(pytz.utc).isoformat().split('+')[0]
+                        print(f"Diag: {dtm_} Read Image")
                         collected_images_q.put((f"{dtm_}", frame[:,:,:]))
                 else:
                     grab_failure_counter += 1
