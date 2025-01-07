@@ -271,12 +271,12 @@ def main():
 
     p1 = threading.Thread(target=Image_Reader, args=(camera_api_details[camera_choice]["video_link"], collected_images, shutdown))
     p2 = threading.Thread(target=Image_Analysis, args=(collected_images, saving_images, region_to_view_mask, mask, model, shutdown))
-    # p3 = threading.Thread(target=Image_Saving, args=(saving_images, sending_images, shutdown))
+    p3 = threading.Thread(target=Image_Saving, args=(saving_images, sending_images, shutdown))
     # p4 = threading.Thread(target=Image_Sending, args=(sending_images, server_api_details, shutdown))
 
     p1.start()
     p2.start()
-    # p3.join()
+    p3.join()
     # p4.join()
 
     p1.join()
