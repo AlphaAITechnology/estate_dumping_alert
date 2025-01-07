@@ -82,6 +82,8 @@ def Image_Sending(sending_images_q, api_details, shutdown):
 def Image_Saving(saving_images_q, sending_images_q, shutdown):
     while (not shutdown):
         while (not saving_images_q.empty()):
+            print("Diag: Saving Called")
+
             dtm_, img, himg = saving_images_q.get()
             fpath = f"./tmp/{dtm_}_i.jpeg"
             hpath = f"./tmp/{dtm_}_h.jpeg"
@@ -112,6 +114,7 @@ def build_human_path_mask(bbox_lists=[], mask=None):
     return np.where(mask>0, 1, 0).astype(np.uint8)
         
 def analysis_trigger(mask_2d=None, change=10):
+    print("Diag: Call For Analysis")
     if mask_2d is None:
         return False
     m = np.where((mask_2d if len(mask_2d.shape)==2 else mask_2d[...,0])>0, 1, 0).astype(np.int64)
@@ -165,10 +168,13 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
                             m = -1
                             midx = -1 
 
+                            print("Diag: Analysis turned true")
+
                             for idx, (_, hres) in enumerate(human_images_collection): # get best human picture
                                 m_ = max([max([abs((y2-y1)*(x2-x1)) for x1, y1, x2, y2 in bbox.tolist()]) for bbox in hres])
                                 m, midx = m_, idx if m_ > m else m, midx
                             
+                            print(f"Diag: Best index {midx}; for {m}")
                             saving_images_q.put( # send for saving
                                 (dtm_, img[:,:,:], human_images_collection[midx][0])
                             )
