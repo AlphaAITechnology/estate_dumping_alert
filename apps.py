@@ -76,7 +76,7 @@ def Image_Sending(sending_images_q, api_details, shutdown):
                     )
 
             del date # hotfix to cure memory leak issue
-        time.sleep(1) # might have to adjust
+        # time.sleep(1) # might have to adjust
 
 
 def Image_Saving(saving_images_q, sending_images_q, shutdown):
