@@ -136,6 +136,7 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
 
     while (not shutdown):
         while (not collected_images_q.empty()):
+            print(f"Diag: Analyse Image")
             dtm_, img = collected_images_q.get()
             
             results = model(img*roi_mask, stream=True, conf=minimum_confidence, classes=[0], device='cuda:1', verbose=False) # looking for people (class 0)
@@ -168,7 +169,7 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
                             m = -1
                             midx = -1 
 
-                            print("Diag: Analysis turned true")
+                            print(f"Diag: Analysis turned true")
 
                             for idx, (_, hres) in enumerate(human_images_collection): # get best human picture
                                 m_ = max([max([abs((y2-y1)*(x2-x1)) for x1, y1, x2, y2 in bbox.tolist()]) for bbox in hres])
@@ -202,6 +203,7 @@ def Image_Reader(video_link, collected_images_q, shutdown):
             grab_failure_tolerance = 15
             grab_failure_counter = 0
             while(cap.isOpened()):
+                print(f"Diag: Read Image")
                 ret = cap.grab()
                 if (ret and collected_images_q.empty()):
                     ret, frame = cap.retrieve()
