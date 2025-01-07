@@ -111,6 +111,13 @@ def build_human_path_mask(bbox_lists=[], mask=None):
         mask = cv.fillPoly(mask, pts=[hull.reshape((-1,2))], color=(255, 255, 255))
     return np.where(mask>0, 1, 0).astype(np.uint8)
         
+def analysis_trigger(mask_2d=None, change=10):
+    if mask_2d is None:
+        return False
+    m = np.where((mask_2d if len(mask_2d.shape)==2 else mask_2d[...,0])>0, 1, 0).astype(np.int64)
+    # Match volume of change
+    m = m.reshape((-1,))
+    return ((np.add.reduce(m)*100)//(m.shape[0])) >= change
 
 def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, shutdown):
 
@@ -121,11 +128,11 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
     human_gone_window = 0
     human_gone_tolerance = 25
 
-    scene_images_collection = []
+    # scene_images_collection = []
     human_images_collection = []
 
     while (not shutdown):
-        if (not collected_images_q.empty()):
+        while (not collected_images_q.empty()):
             dtm_, img = collected_images_q.get()
             
             results = model(img*roi_mask, stream=True, conf=minimum_confidence, classes=[0], device='cuda:1', verbose=False) # looking for people (class 0)
@@ -152,16 +159,20 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
 
                         fg_mask = fg_mask * mask[:,:,0] # Masking Foreground
                         fg_mask = fg_mask * human_path_mask[:,:,0] # Masking Humans
-
                         fg_mask = cv.morphologyEx(fg_mask, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_CROSS, (3,3)), iterations=3)
-                        fg_mask_ = np.stack((fg_mask, fg_mask, fg_mask), axis=2)
+                        
+                        if analysis_trigger(fg_mask): # analyse results
+                            m = -1
+                            midx = -1 
 
-                        cv.imwrite(f"./tmp/inspect_{dtm_}.png", np.hstack((fg_mask_, img)))
-
-
-                        # analyse results
-                        # get best human picture
-                        # send for saving
+                            for idx, (_, hres) in enumerate(human_images_collection): # get best human picture
+                                m_ = max([max([abs((y2-y1)*(x2-x1)) for x1, y1, x2, y2 in bbox.tolist()]) for bbox in hres])
+                                m, midx = m_, idx if m_ > m else m, midx
+                            
+                            saving_images_q.put( # send for saving
+                                (dtm_, img[:,:,:], human_images_collection[midx][0])
+                            )
+                            
                         human_images_collection[:] = [] # empty human collection
                 else:
                     _ = bg_subtractor.apply(img[:,:,:])
@@ -170,7 +181,7 @@ def Image_Analysis(collected_images_q, saving_images_q, roi_mask, mask, model, s
             del dtm_
             del img
                 
-                
+        time.sleep(1)                
 
 
 
