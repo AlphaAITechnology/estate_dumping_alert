@@ -58,27 +58,26 @@ def Image_Sending(sending_images_q, api_details):
                 print(f"Diag: Picture Upload Succesful: {img_url}")
                 print(f"Diag: Picture Upload Succesful: {highlight_url}")
                 
-                # response = req.post(
-                #     f"{base_url}/{email_point}",
-                #     headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
-                #     data={
-                #         "dataUrl":img_url,
-                #         "highlightUrl":highlight_url,
-                #         "reportDateStart": date,
-                #         "reportDateEnd": date,
-                #         "totalDetection":1,
-                #     }
-                # )
+                response = req.post(
+                    f"{base_url}/{email_point}",
+                    headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
+                    data={
+                        "dataUrl":img_url,
+                        "highlightUrl":highlight_url,
+                        "reportDateStart": date,
+                        "reportDateEnd": date,
+                        "totalDetection":1,
+                    }
+                )
 
-                # print(
-                #     "email response:\t",
-                #     json.loads(
-                #         response.text
-                #     )
-                # )
+                print(
+                    "email response:\t",
+                    json.loads(
+                        response.text
+                    )
+                )
 
         del date # hotfix to cure memory leak issue
-    # time.sleep(1) # might have to adjust
 
 
 def Image_Saving(data_tuple, sending_images_q, server_api_details):
@@ -97,6 +96,7 @@ def Image_Saving(data_tuple, sending_images_q, server_api_details):
 
     data_upload_thread = threading.Thread(target=Image_Sending, args=(sending_images_q, server_api_details))
     data_upload_thread.start() # exit without waiting; we wish for the system to behave asynchronously
+    print(f"Diag: Exhibit Function Exit")
 
 
 def build_human_path_mask(bbox_lists=[], mask=None):
@@ -115,7 +115,7 @@ def build_human_path_mask(bbox_lists=[], mask=None):
         mask = cv.fillPoly(mask, pts=[hull.reshape((-1,2))], color=(255, 255, 255))
     return np.where(mask>0, 1, 0).astype(np.uint8)
         
-def analysis_trigger(mask_2d=None, change=10):
+def analysis_trigger(mask_2d=None, change=1):
     print("Diag: Call For Analysis")
     if mask_2d is None:
         return False
