@@ -13,73 +13,75 @@ import json
 import gzip as gz
 import pytz
 
-def Image_Sending(sending_images_q, api_details, shutdown):
+def Image_Sending(sending_images_q, api_details):
 
     base_url = api_details["server"]["base_url"] # "https://waste-api-mnzypva.alphaaitech.com"
     upload_point = api_details["server"]["upload_point"] # "file"
     email_point = api_details["server"]["email_point"] # "email/send"
     xapitoken = api_details["server"]["x_api_token"] # "zajvak-9zeCvu-taxsyv"
 
+    while (not sending_images_q.empty()):
+        fpath, hpath, date = sending_images_q.get()
 
-    while (not shutdown):
-        while (not sending_images_q.empty()):
-            fpath, hpath, date = sending_images_q.get()
-
-            with open(fpath, "rb") as files_:
-                # storing file in s3
-                response_img = req.post(
-                    f"{base_url}/{upload_point}",
-                    files = {'file': (fpath, files_, 'image/webp')},
-                    headers = {"x-api-token": xapitoken},
-                )
-            with open(hpath, "rb") as files_:
-                # storing file in s3
-                response_highlight = req.post(
-                    f"{base_url}/{upload_point}",
-                    files = {'file': (hpath, files_, 'image/webp')},
-                    headers = {"x-api-token": xapitoken},
-                )
+        with open(fpath, "rb") as files_:
+            # storing file in s3
+            response_img = req.post(
+                f"{base_url}/{upload_point}",
+                files = {'file': (fpath, files_, 'image/webp')},
+                headers = {"x-api-token": xapitoken},
+            )
+        with open(hpath, "rb") as files_:
+            # storing file in s3
+            response_highlight = req.post(
+                f"{base_url}/{upload_point}",
+                files = {'file': (hpath, files_, 'image/webp')},
+                headers = {"x-api-token": xapitoken},
+            )
 
 
-            os.remove(fpath) # delete stored memory
-            os.remove(hpath) # delete stored memory
-            del fpath # hotfix to cure memory leak issue
-            del hpath # hotfix to cure memory leak issue
-            
+        os.remove(fpath) # delete stored memory
+        os.remove(hpath) # delete stored memory
+        del fpath # hotfix to cure memory leak issue
+        del hpath # hotfix to cure memory leak issue
+        
 
 
-            if  (response_img.status_code == 201):
-                response_1 = json.loads(response_img.text)
-                response_2 = json.loads(response_highlight.text)
+        if  (response_img.status_code == 201):
+            response_1 = json.loads(response_img.text)
+            response_2 = json.loads(response_highlight.text)
 
-                img_url = response_1["fileUrl"] if "fileUrl" in response_1 else None
-                highlight_url = response_2["fileUrl"] if "fileUrl" in response_2 else None
+            img_url = response_1["fileUrl"] if "fileUrl" in response_1 else None
+            highlight_url = response_2["fileUrl"] if "fileUrl" in response_2 else None
 
-                if not ((img_url is None) or (highlight_url is None)):
-                    response = req.post(
-                        f"{base_url}/{email_point}",
-                        headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
-                        data={
-                            "dataUrl":img_url,
-                            "highlightUrl":highlight_url,
-                            "reportDateStart": date,
-                            "reportDateEnd": date,
-                            "totalDetection":1,
-                        }
-                    )
+            if not ((img_url is None) or (highlight_url is None)):
+                
+                print(f"Diag: Picture Upload Succesful: {img_url}")
+                print(f"Diag: Picture Upload Succesful: {highlight_url}")
+                
+                # response = req.post(
+                #     f"{base_url}/{email_point}",
+                #     headers={"x-api-token": "zajvak-9zeCvu-taxsyv"},
+                #     data={
+                #         "dataUrl":img_url,
+                #         "highlightUrl":highlight_url,
+                #         "reportDateStart": date,
+                #         "reportDateEnd": date,
+                #         "totalDetection":1,
+                #     }
+                # )
 
-                    print(
-                        "email response:\t",
-                        json.loads(
-                            response.text
-                        )
-                    )
+                # print(
+                #     "email response:\t",
+                #     json.loads(
+                #         response.text
+                #     )
+                # )
 
-            del date # hotfix to cure memory leak issue
-        # time.sleep(1) # might have to adjust
+        del date # hotfix to cure memory leak issue
+    # time.sleep(1) # might have to adjust
 
 
-def Image_Saving(data_tuple, sending_images_q):
+def Image_Saving(data_tuple, sending_images_q, server_api_details):
     print("Diag: Saving Called")
 
     dtm_, img, himg = data_tuple
@@ -92,6 +94,9 @@ def Image_Saving(data_tuple, sending_images_q):
     del dtm_ # hotfix to cure memory leak issue
     del img  # hotfix to cure memory leak issue
     del himg  # hotfix to cure memory leak issue
+
+    data_upload_thread = threading.Thread(target=Image_Sending, args=(sending_images_q, server_api_details))
+    data_upload_thread.start() # exit without waiting; we wish for the system to behave asynchronously
 
 
 def build_human_path_mask(bbox_lists=[], mask=None):
@@ -119,7 +124,7 @@ def analysis_trigger(mask_2d=None, change=10):
     m = m.reshape((-1,))
     return ((np.add.reduce(m)*100)//(m.shape[0])) >= change
 
-def Image_Analysis(collected_images_q, sending_images_q, roi_mask, mask, model, shutdown):
+def Image_Analysis(collected_images_q, sending_images_q, roi_mask, mask, model, server_api_details, shutdown):
 
     bg_subtractor = cv.createBackgroundSubtractorMOG2(varThreshold=50)
     
@@ -173,7 +178,7 @@ def Image_Analysis(collected_images_q, sending_images_q, roi_mask, mask, model, 
                                 m, midx = (m_, idx) if m_ > m else (m, midx)
                             
                             print(f"Diag: Best index {midx}; for {m}")
-                            Image_Saving((dtm_, img[:,:,:], human_images_collection[midx][0]), sending_images_q)
+                            Image_Saving((dtm_, img[:,:,:], human_images_collection[midx][0]), sending_images_q, server_api_details)
                             
                         human_images_collection[:] = [] # empty human collection
                 else:
@@ -184,10 +189,6 @@ def Image_Analysis(collected_images_q, sending_images_q, roi_mask, mask, model, 
             del img
                 
         # time.sleep(1)                
-
-
-
-
 
 def Image_Reader(video_link, collected_images_q, shutdown):
     if not shutdown:
@@ -273,7 +274,7 @@ def main():
     sending_images = queue.Queue()
 
     p1 = threading.Thread(target=Image_Reader, args=(camera_api_details[camera_choice]["video_link"], collected_images, shutdown))
-    p2 = threading.Thread(target=Image_Analysis, args=(collected_images, sending_images, region_to_view_mask, mask, model, shutdown))
+    p2 = threading.Thread(target=Image_Analysis, args=(collected_images, sending_images, region_to_view_mask, mask, model, server_api_details, shutdown))
     # p3 = threading.Thread(target=Image_Saving, args=(saving_images, sending_images, shutdown))
     # p4 = threading.Thread(target=Image_Sending, args=(sending_images, server_api_details, shutdown))
 
