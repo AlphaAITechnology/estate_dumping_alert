@@ -247,8 +247,7 @@ def main():
     }
     camera_api_details = {
         "Camera_1" : {
-            "video_link": "./20240806_1803.mkv",
-            # "video_link": "rtsp://admin:hik12345@180.188.143.227:581",
+            "video_link": "rtsp://admin:hik12345@180.188.143.227:581",
             "mask_file_paths" : [
                 "street_container_mask_581.csv.gz",
                 "street_backdrop_mask_581.csv.gz"
